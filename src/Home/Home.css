@@ -26,10 +26,10 @@
 .tf *, .tf *::before, .tf *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: 84px; }
 .tf img { max-width: 100%; display: block; }
-.tf a { color: inherit; text-decoration: none; }
-.tf ul, .tf ol { list-style: none; margin: 0; padding: 0; }
-.tf h1, .tf h2, .tf h3, .tf h4, .tf p, .tf blockquote, .tf figure { margin: 0; }
-.tf button { font: inherit; cursor: pointer; }
+.tf :where(a) { color: inherit; text-decoration: none; }
+.tf :where(ul, ol) { list-style: none; margin: 0; padding: 0; }
+.tf :where(h1, h2, h3, h4, p, blockquote, figure) { margin: 0; }
+.tf :where(button) { font: inherit; cursor: pointer; }
 .tf :focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
 .container { width: min(1240px, 100% - var(--pad) * 2); margin-inline: auto; }
 .section { padding-block: clamp(64px, 9vw, 120px); }

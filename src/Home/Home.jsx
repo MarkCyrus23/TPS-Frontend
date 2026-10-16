@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import "./Home.css";
 
 /* ---------- Built-in graphics (no image files needed) ---------- */
@@ -27,6 +28,30 @@ function Icon({ name, size = 64 }) {
       strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       {ICONS[name]}
     </svg>
+  );
+}
+
+/* Sign In link, or Sign Out once logged in (demo auth via sessionStorage) */
+function AuthButton({ className, onDone }) {
+  const [authed, setAuthed] = useState(() => sessionStorage.getItem("tf_auth") === "1");
+  if (authed) {
+    return (
+      <button
+        className={className}
+        onClick={() => {
+          sessionStorage.removeItem("tf_auth");
+          setAuthed(false);
+          onDone?.();
+        }}
+      >
+        Sign Out
+      </button>
+    );
+  }
+  return (
+    <Link to="/signin" className={className} onClick={onDone}>
+      Sign In
+    </Link>
   );
 }
 
@@ -163,13 +188,13 @@ function Navbar() {
           ))}
           <a href="#book" className="nav__appt" onClick={() => setOpen(false)}>My appointments</a>
           <div className="nav__cta-mobile">
-            <button className="btn btn--ghost">Sign In</button>
+            <AuthButton className="btn btn--ghost" onDone={() => setOpen(false)} />
             <button className="btn btn--solid">Get Started</button>
           </div>
         </nav>
 
         <div className="nav__cta">
-          <button className="btn btn--ghost btn--sm">Sign In</button>
+          <AuthButton className="btn btn--ghost btn--sm" />
           <button className="btn btn--solid btn--sm">Get Started</button>
         </div>
 
