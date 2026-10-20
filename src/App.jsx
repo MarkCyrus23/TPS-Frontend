@@ -10,6 +10,10 @@ import Confirmation from "./BookSession/Confirmation";
 import MyAppointments from "./MyAppointments/MyAppointments";
 import Contact from "./Contact/Contact";
 import AdminDashboard from "./admin/admindashboard";
+import AdminAppointment from "./admin/adminappointment";
+import AdminPayment from "./admin/adminpay";
+import AdminBackup from "./admin/adminbackup";
+import AdminPaymentMethod from "./admin/adminpaymentmethod";
 export default function App() {
   return (
     <Routes>
@@ -31,6 +35,10 @@ export default function App() {
 
       {/* ADMIN*/}
       <Route path="/admin" element={<AdminDashboard />} />
+      <Route path="/admin/appointment" element={<AdminAppointment />} />
+      <Route path="/admin/payment" element={<AdminPayment />} />
+      <Route path="/admin/backup" element={<AdminBackup />} />
+      <Route path="/admin/payment-method" element={<AdminPaymentMethod />} />
     </Routes>
   );
 }
