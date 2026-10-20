@@ -10,6 +10,7 @@ import Confirmation from "./BookSession/Confirmation";
 import MyAppointments from "./MyAppointments/MyAppointments";
 import Contact from "./Contact/Contact";
 import AdminDashboard from "./admin/admindashboard";
+import AdminSchedule from "./admin/adminschedule";
 export default function App() {
   return (
     <Routes>
@@ -29,8 +30,10 @@ export default function App() {
       <Route path="/appointments" element={<MyAppointments />} />
       <Route path="/Contact" element={<Contact />} />
 
-      {/* ADMIN*/}
+      {/* ADMIN */}
       <Route path="/admin" element={<AdminDashboard />} />
+      <Route path="/admin/schedule" element={<AdminSchedule />} />
+      <Route path="/admin/schedules" element={<AdminSchedule />} />
     </Routes>
   );
 }
