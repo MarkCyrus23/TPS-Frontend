@@ -1,9 +1,8 @@
 import React from "react";
+import { Link } from "react-router-dom";
+import { Photo, Logo } from "../components/Layout";
 
-/* ------------------------------------------------------------------ */
-/*  Fonts (Inter / Inria Serif / Inknut Antiqua)                       */
-/*  If you already load these in index.html, delete the <style> below. */
-/* ------------------------------------------------------------------ */
+
 const FONT_CSS = `@import url('https://fonts.googleapis.com/css2?family=Inknut+Antiqua:wght@600&family=Inria+Serif:wght@400;700&family=Inter:wght@400;600;700&display=swap');`;
 
 const inter = "font-['Inter',Helvetica,sans-serif]";
@@ -64,14 +63,6 @@ const ACTIVITY = Array.from({ length: 4 }, (_, i) => ({
 /* ------------------------------------------------------------------ */
 /*  Small building blocks                                              */
 /* ------------------------------------------------------------------ */
-const Logo = ({ className = "w-[70px] h-[66px]" }) => (
-    // Replace with <img src="/img/threefold-logo.png" /> when you have the asset
-    <svg viewBox="0 0 70 66" className={className} aria-label="Threefold logo">
-        <circle cx="25" cy="24" r="17" fill="#4a9b8e" opacity="0.9" />
-        <circle cx="45" cy="24" r="17" fill="#e07b6a" opacity="0.85" />
-        <circle cx="35" cy="42" r="17" fill="#f4c95d" opacity="0.85" />
-    </svg>
-);
 
 const Card = ({ className = "", children }) => (
     <section
@@ -144,16 +135,24 @@ const SPARK_C = {
 /*  Sidebar                                                            */
 /* ------------------------------------------------------------------ */
 const Sidebar = () => (
-    <aside className="relative flex h-[923px] w-[321px] shrink-0 flex-col self-start rounded-tr-[64px] rounded-br-[64px] rounded-bl-[32px] bg-[#1f4d3f]">
+    <aside className="sticky top-0 flex h-screen w-[321px] shrink-0 flex-col self-start rounded-tr-[64px] rounded-br-[64px] rounded-bl-[32px] bg-[#1f4d3f]">
         {/* Brand */}
-        <div className="relative mt-[43px] h-[66px]">
-            <Logo className="absolute left-[15px] top-0 h-[66px] w-[70px] opacity-60" />
-            <div className="absolute left-[92px] top-[8px]">
-                <div className={`${serif} text-[20px] leading-[20px] text-[#3d865b]`}>THREEFOLD</div>
-                <p className={`${serif} mt-[13px] whitespace-nowrap text-[15px] leading-[15px] text-[#3d865b]`}>
-                    Behavioral Interventions And Psychological Services
-                </p>
-            </div>
+        <div className="relative mt-[38px] px-[26px]">
+            <Link to="/" className="group flex items-center gap-[12px] no-underline" aria-label="Threefold Home">
+                <Photo
+                    src="/img/logo.png"
+                    className="h-[42px] w-[42px] shrink-0 object-contain transition-transform group-hover:scale-105"
+                    fallback={<Logo size={42} />}
+                />
+                <div className="flex flex-col">
+                    <span className={`${serif} text-[15px] font-bold tracking-[0.05em] text-[#f2f7f4] leading-[16px] transition-colors group-hover:text-white`}>
+                        THREEFOLD
+                    </span>
+                    <span className={`${serif} mt-[3px] max-w-[195px] text-[8px] leading-[11px] text-[#a8c8b8]`}>
+                        Behavioral Interventions And Psychological Services
+                    </span>
+                </div>
+            </Link>
         </div>
 
         {/* Menu label */}
@@ -177,13 +176,13 @@ const Sidebar = () => (
         {/* Nav */}
         <nav className="mt-[44px] flex flex-col gap-[41px] px-[40px]">
             {NAV.map((item) => (
-                <a
+                <Link
                     key={item}
-                    href="#"
-                    className={`${inknut} text-[20px] font-semibold text-[#2a8570] transition-colors hover:text-[#4fbfa5]`}
+                    to={item === "Schedules" ? "/admin/schedule" : "#"}
+                    className={`${inknut} text-[20px] font-semibold text-[#2a8570] transition-colors hover:text-[#4fbfa5] no-underline`}
                 >
                     {item}
-                </a>
+                </Link>
             ))}
         </nav>
 

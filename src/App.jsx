@@ -33,7 +33,7 @@ export default function App() {
       <Route path="/appointments" element={<MyAppointments />} />
       <Route path="/Contact" element={<Contact />} />
 
-      {/* ADMIN*/}
+      {/* ADMIN */}
       <Route path="/admin" element={<AdminDashboard />} />
       <Route path="/admin/appointment" element={<AdminAppointment />} />
       <Route path="/admin/payment" element={<AdminPayment />} />
