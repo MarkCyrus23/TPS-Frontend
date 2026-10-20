@@ -1,5 +1,5 @@
 import React from "react";
-import AffiliateNavigation from "./AffiliateNavigation";
+import AffiliateNavigation from "./affiliatenav";
 import { Logo } from "../components/Layout";
 
 const FONT_CSS = `@import url('https://fonts.googleapis.com/css2?family=Inknut+Antiqua:wght@600&family=Inria+Serif:wght@400;700&family=Inter:wght@400;600;700&display=swap');`;
