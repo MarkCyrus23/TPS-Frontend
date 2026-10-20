@@ -15,6 +15,7 @@ import AdminPayment from "./admin/adminpay";
 import AdminBackup from "./admin/adminbackup";
 import AdminPaymentMethod from "./admin/adminpaymentmethod";
 import AdminSchedule from "./admin/adminschedule";
+import AffiliateDashboard from "./affiliate/affiliatedashboard";
 
 export default function App() {
   return (
@@ -43,6 +44,8 @@ export default function App() {
       <Route path="/admin/payment-method" element={<AdminPaymentMethod />} />
       <Route path="/admin/schedule" element={<AdminSchedule />} />
 
+      {/* AFFILIATE */}
+      <Route path="/affiliate" element={<AffiliateDashboard />} />
     </Routes>
   );
 }
