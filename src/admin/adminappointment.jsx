@@ -1,13 +1,14 @@
 import React, { useMemo, useState } from "react";
+import AdminNavigation from "./adminnavigation";
 
 const FONT_CSS = `@import url('https://fonts.googleapis.com/css2?family=Inknut+Antiqua:wght@600&family=Inria+Serif:wght@400;700&family=Inter:wght@400;600;700&display=swap');`;
 
 const inter = "font-['Inter',Helvetica,sans-serif]";
 const serif = "font-['Inria_Serif',Georgia,serif]";
-const inknut = "font-['Inknut_Antiqua',Georgia,serif]";
 
-const NAV = ["Schedules", "Services", "Payment", "Backup and Restore"];
-
+/* ------------------------------------------------------------------ */
+/*  Data (sample — replace with your backend data)                     */
+/* ------------------------------------------------------------------ */
 const DAYS = [
     { key: "today", title: "TODAY", n: 15, dow: "THU" },
     { key: "tomorrow", title: "TOMORROW", n: 16, dow: "FRI" },
@@ -77,59 +78,6 @@ const INITIAL = RAW.map(([day, name, service, h, mode, status], i) => {
 /* ------------------------------------------------------------------ */
 /*  Building blocks                                                    */
 /* ------------------------------------------------------------------ */
-const Logo = ({ className = "w-[70px] h-[66px]" }) => (
-    // Replace with <img src="/img/threefold-logo.png" /> when you have the asset
-    <svg viewBox="0 0 70 66" className={className} aria-label="Threefold logo">
-        <circle cx="25" cy="24" r="17" fill="#4a9b8e" opacity="0.9" />
-        <circle cx="45" cy="24" r="17" fill="#e07b6a" opacity="0.85" />
-        <circle cx="35" cy="42" r="17" fill="#f4c95d" opacity="0.85" />
-    </svg>
-);
-
-const Sidebar = () => (
-    <aside className="relative flex h-[923px] w-[321px] shrink-0 flex-col self-start rounded-tr-[64px] rounded-br-[64px] rounded-bl-[32px] bg-[#1f4d3f]">
-        <div className="relative mt-[43px] h-[66px]">
-            <Logo className="absolute left-[15px] top-0 h-[66px] w-[70px] opacity-60" />
-            <div className="absolute left-[92px] top-[8px]">
-                <div className={`${serif} text-[20px] leading-[20px] text-[#3d865b]`}>THREEFOLD</div>
-                <p className={`${serif} mt-[13px] whitespace-nowrap text-[15px] leading-[15px] text-[#3d865b]`}>
-                    Behavioral Interventions And Psychological Services
-                </p>
-            </div>
-        </div>
-
-        <div className={`${inter} mt-[44px] px-[40px] text-[14px] font-bold tracking-[2.52px] text-[#a8c8b8]`}>MENU</div>
-
-        {/* Dashboard (inactive) */}
-        <a href="#" className="mt-[16px] flex h-[52px] items-center gap-[20px] px-[49px]">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3d7a68" strokeWidth="1.8">
-                <rect x="2" y="2" width="6" height="6" rx="1.2" />
-                <rect x="12" y="2" width="6" height="6" rx="1.2" />
-                <rect x="2" y="12" width="6" height="6" rx="1.2" />
-                <rect x="12" y="12" width="6" height="6" rx="1.2" />
-            </svg>
-            <span className={`${inter} text-[18px] font-bold text-[#3d7a68] hover:text-white`}>Dashboard</span>
-        </a>
-
-        {/* Active: Appointment */}
-        <div className="relative ml-[14px] mt-[8px] flex h-[52px] items-center rounded-l-[26px] bg-white pl-[26px]">
-            <span className={`${inknut} text-[20px] font-semibold text-[#2a8570]`}>Appointment</span>
-        </div>
-
-        <nav className="mt-[24px] flex flex-col gap-[41px] px-[40px]">
-            {NAV.map((item) => (
-                <a key={item} href="#" className={`${inknut} text-[20px] font-semibold text-[#2a8570] transition-colors hover:text-[#4fbfa5]`}>
-                    {item}
-                </a>
-            ))}
-        </nav>
-
-        <a href="#" className={`${inknut} mt-auto mb-[64px] px-[30px] text-[20px] font-semibold text-[#2a8570] transition-colors hover:text-[#4fbfa5]`}>
-            Logout
-        </a>
-    </aside>
-);
-
 const Header = () => (
     <header className="flex items-start justify-between">
         <div>
@@ -322,7 +270,7 @@ export default function Appointment() {
         <div className="flex min-h-screen w-full min-w-[1440px] bg-[#f2f2f2] antialiased">
             <style>{FONT_CSS}</style>
 
-            <Sidebar />
+            <AdminNavigation />
 
             <main className="flex-1 px-[36px] pb-[60px] pt-[51px]">
                 <Header />

@@ -1,12 +1,10 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { Photo, Logo } from "../components/Layout";
+import AdminNavigation from "./adminnavigation";
 
 const FONT_CSS = `@import url('https://fonts.googleapis.com/css2?family=Inknut+Antiqua:wght@400;600;700&family=Inria+Serif:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Inter:wght@400;500;600;700&display=swap');`;
 
 const inter = "font-['Inter',Helvetica,sans-serif]";
 const serif = "font-['Inria_Serif',Georgia,serif]";
-const inknut = "font-['Inknut_Antiqua',Georgia,serif]";
 
 /* ------------------------------------------------------------------ */
 /*  Initial Data for October 2023                                      */
@@ -63,102 +61,6 @@ const INITIAL_DAYS = [
   { d: 3, dayName: "Fri", state: "next-month", hours: "" },
   { d: 4, dayName: "Sat", state: "next-month", hours: "" },
 ];
-
-/* ------------------------------------------------------------------ */
-/*  Sidebar Component based exactly on admindashboard.jsx              */
-/* ------------------------------------------------------------------ */
-const Sidebar = () => (
-  <aside className="sticky top-0 flex h-screen w-[321px] shrink-0 flex-col self-start rounded-tr-[64px] rounded-br-[64px] rounded-bl-[32px] bg-[#1f4d3f]">
-    {/* Brand */}
-    <div className="relative mt-[38px] px-[26px]">
-      <Link to="/" className="group flex items-center gap-[12px] no-underline" aria-label="Threefold Home">
-        <Photo
-          src="/img/logo.png"
-          className="h-[42px] w-[42px] shrink-0 object-contain transition-transform group-hover:scale-105"
-          fallback={<Logo size={42} />}
-        />
-        <div className="flex flex-col">
-          <span className={`${serif} text-[15px] font-bold tracking-[0.05em] text-[#f2f7f4] leading-[16px] transition-colors group-hover:text-white`}>
-            THREEFOLD
-          </span>
-          <span className={`${serif} mt-[3px] max-w-[195px] text-[8px] leading-[11px] text-[#a8c8b8]`}>
-            Behavioral Interventions And Psychological Services
-          </span>
-        </div>
-      </Link>
-    </div>
-
-    {/* Menu label */}
-    <div className={`${inter} mt-[44px] px-[40px] text-[14px] font-bold tracking-[2.52px] text-[#a8c8b8]`}>
-      MENU
-    </div>
-
-    {/* Dashboard link (inactive - using inter like admindashboard) */}
-    <div className="mt-[20px] px-[40px]">
-      <Link
-        to="/admin"
-        className="flex items-center gap-[14px] text-[#2a8570] transition-colors hover:text-[#4fbfa5] no-underline"
-      >
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <rect x="2" y="2" width="6" height="6" rx="1.2" />
-          <rect x="12" y="2" width="6" height="6" rx="1.2" />
-          <rect x="2" y="12" width="6" height="6" rx="1.2" />
-          <rect x="12" y="12" width="6" height="6" rx="1.2" />
-        </svg>
-        <span className={`${inter} text-[18px] font-bold`}>Dashboard</span>
-      </Link>
-    </div>
-
-    {/* Appointment (inactive - inknut) */}
-    <div className="mt-[34px] px-[40px]">
-      <a
-        href="#"
-        className={`${inknut} text-[20px] font-semibold text-[#2a8570] transition-colors hover:text-[#4fbfa5] no-underline block`}
-      >
-        Appointment
-      </a>
-    </div>
-
-    {/* Active tab: Schedules (white pill flush with the sidebar's right edge, matching serif font from image) */}
-    <div className="relative ml-[26px] mt-[26px] h-[52px] rounded-l-[26px] bg-white flex items-center pl-[24px]">
-      <span className={`${serif} text-[22px] font-bold text-[#1f6b55]`}>
-        Schedules
-      </span>
-    </div>
-
-    {/* Other nav items (inknut like admindashboard) */}
-    <nav className="mt-[26px] flex flex-col gap-[36px] px-[40px]">
-      <a
-        href="#"
-        className={`${inknut} text-[20px] font-semibold text-[#2a8570] transition-colors hover:text-[#4fbfa5] no-underline`}
-      >
-        Services
-      </a>
-      <a
-        href="#"
-        className={`${inknut} text-[20px] font-semibold text-[#2a8570] transition-colors hover:text-[#4fbfa5] no-underline`}
-      >
-        Payment
-      </a>
-      <a
-        href="#"
-        className={`${inknut} text-[20px] font-semibold text-[#2a8570] transition-colors hover:text-[#4fbfa5] no-underline`}
-      >
-        Backup and Restore
-      </a>
-    </nav>
-
-    {/* Logout at bottom (inknut) */}
-    <div className="mt-auto mb-[60px] px-[38px]">
-      <a
-        href="#"
-        className={`${inknut} text-[20px] font-semibold text-[#2a8570] transition-colors hover:text-[#4fbfa5] no-underline`}
-      >
-        Logout
-      </a>
-    </div>
-  </aside>
-);
 
 /* ------------------------------------------------------------------ */
 /*  Main Schedule Component                                            */
@@ -231,7 +133,7 @@ export default function AdminSchedule() {
 
       <div className="flex w-full items-start">
         {/* Left Sidebar */}
-        <Sidebar />
+        <AdminNavigation />
 
         {/* Right Main Content Area */}
         <main className="flex-1 px-[40px] pt-[32px] pb-[60px] max-w-[1400px]">

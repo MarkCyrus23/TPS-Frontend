@@ -42,7 +42,7 @@ export default function App() {
       <Route path="/admin/backup" element={<AdminBackup />} />
       <Route path="/admin/payment-method" element={<AdminPaymentMethod />} />
       <Route path="/admin/schedule" element={<AdminSchedule />} />
-      
+
     </Routes>
   );
 }

@@ -1,10 +1,10 @@
 import React, { useState } from "react";
+import AdminNavigation from "./adminnavigation";
 
 const FONT_CSS = `@import url('https://fonts.googleapis.com/css2?family=Inknut+Antiqua:wght@600&family=Inria+Serif:wght@400;700&family=Inter:wght@400;600;700&display=swap');`;
 
 const inter = "font-['Inter',Helvetica,sans-serif]";
 const serif = "font-['Inria_Serif',Georgia,serif]";
-const inknut = "font-['Inknut_Antiqua',Georgia,serif]";
 
 /* ---------- Icons (inline SVG) ---------- */
 function Icon({ className = "", children }) {
@@ -59,19 +59,7 @@ const AlertCircle = (p) => (
   </Icon>
 );
 
-/* ---------- Brand logo (same as Dashboard) ---------- */
-const Logo = ({ className = "" }) => (
-  <svg viewBox="0 0 70 66" className={className} aria-label="Threefold logo">
-    <circle cx="25" cy="24" r="17" fill="#4a9b8e" opacity="0.9" />
-    <circle cx="45" cy="24" r="17" fill="#e07b6a" opacity="0.85" />
-    <circle cx="35" cy="42" r="17" fill="#f4c95d" opacity="0.85" />
-  </svg>
-);
-
 /* ---------- Data ---------- */
-const NAV = ["Dashboard", "Appointment", "Schedules", "Services", "Payment", "Backup and Restore"];
-const ACTIVE_NAV = "Payment";
-
 const todayPayments = [
   { id: 1, day: "17", month: "Oct", time: "4:14 PM", name: "Juan Delacruz", service: "Psychotherapy · Tomorrow, 10:00 AM", type: "Full payment", method: "Gcash", amount: "₱1,500", statusText: "Paid in full", status: "To verify", action: "Review receipt" },
   { id: 2, day: "17", month: "Oct", time: "4:14 PM", name: "Juan Delacruz", service: "Psychotherapy · Tomorrow, 10:00 AM", type: "Downpayment", method: "Maya", amount: "₱750", statusText: "Balance ₱750", status: "To verify", action: "Review receipt" },
@@ -81,55 +69,6 @@ const yesterdayPayments = [
   { id: 3, day: "17", month: "Oct", time: "4:14 PM", name: "Juan Delacruz", service: "Psychotherapy · Tomorrow, 10:00 AM", type: "Full payment", method: "Gcash", amount: "₱1,500", statusText: "Paid in full", status: "Verified", action: "View receipt" },
   { id: 4, day: "17", month: "Oct", time: "4:14 PM", name: "Juan Delacruz", service: "Psychotherapy · Tomorrow, 10:00 AM", type: "Downpayment", method: "Gcash", amount: "₱750", statusText: "Balance ₱750", status: "Verified", action: "View receipt" },
 ];
-
-/* ---------- Sidebar (same as Dashboard) ---------- */
-const Sidebar = () => (
-  <aside className="sticky top-0 flex h-screen min-h-[780px] w-[321px] shrink-0 flex-col self-start rounded-tr-[64px] rounded-br-[64px] rounded-bl-[32px] bg-[#1f4d3f]">
-    {/* Brand */}
-    <div className="relative mt-[43px] h-[66px]">
-      <Logo className="absolute left-[15px] top-0 h-[66px] w-[70px] opacity-60" />
-      <div className="absolute left-[92px] top-[8px]">
-        <div className={`${serif} text-[20px] leading-[20px] text-[#3d865b]`}>THREEFOLD</div>
-        <p className={`${serif} mt-[13px] whitespace-nowrap text-[15px] leading-[15px] text-[#3d865b]`}>
-          Behavioral Interventions And Psychological Services
-        </p>
-      </div>
-    </div>
-
-    <div className={`${inter} mt-[44px] px-[40px] text-[14px] font-bold tracking-[2.52px] text-[#a8c8b8]`}>
-      MENU
-    </div>
-
-    <nav className="mt-[16px] flex flex-col gap-[14px]">
-      {NAV.map((item) =>
-        item === ACTIVE_NAV ? (
-          <a
-            key={item}
-            href="#"
-            className={`${inter} ml-[26px] flex h-[52px] items-center rounded-l-[26px] bg-white pl-[37px] text-[18px] font-bold text-[#1f6b55]`}
-          >
-            {item}
-          </a>
-        ) : (
-          <a
-            key={item}
-            href="#"
-            className={`${inknut} px-[40px] py-[8px] text-[20px] font-semibold text-[#2a8570] transition-colors hover:text-[#4fbfa5]`}
-          >
-            {item}
-          </a>
-        )
-      )}
-    </nav>
-
-    <a
-      href="#"
-      className={`${inknut} mt-auto mb-[64px] px-[38px] text-[20px] font-semibold text-[#2a8570] transition-colors hover:text-[#4fbfa5]`}
-    >
-      Logout
-    </a>
-  </aside>
-);
 
 /* ---------- Page ---------- */
 export default function PaymentDashboard() {
@@ -142,7 +81,7 @@ export default function PaymentDashboard() {
     <div className="flex min-h-screen w-full bg-[#f2f2f2] antialiased">
       <style>{FONT_CSS}</style>
 
-      <Sidebar />
+      <AdminNavigation />
 
       <main className="flex-1 overflow-y-auto px-[41px] pb-[60px] pt-[51px]">
         {/* Header */}
