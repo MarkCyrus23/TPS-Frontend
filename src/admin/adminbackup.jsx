@@ -1,8 +1,5 @@
 import React, { useRef, useState } from "react";
 
-/* ------------------------------------------------------------------ */
-/*  Fonts (same as Dashboard / Payment). Delete <style> if already in index.html */
-/* ------------------------------------------------------------------ */
 const FONT_CSS = `@import url('https://fonts.googleapis.com/css2?family=Inknut+Antiqua:wght@600&family=Inria+Serif:wght@400;700&family=Inter:wght@400;600;700&display=swap');`;
 
 const inter = "font-['Inter',Helvetica,sans-serif]";

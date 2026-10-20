@@ -1,15 +1,11 @@
 import React, { useMemo, useState } from "react";
 
-/* Fonts — delete if already loaded globally (same as AdminDashboard). */
 const FONT_CSS = `@import url('https://fonts.googleapis.com/css2?family=Inknut+Antiqua:wght@600&family=Inria+Serif:wght@400;700&family=Inter:wght@400;600;700&display=swap');`;
 
 const inter = "font-['Inter',Helvetica,sans-serif]";
 const serif = "font-['Inria_Serif',Georgia,serif]";
 const inknut = "font-['Inknut_Antiqua',Georgia,serif]";
 
-/* ------------------------------------------------------------------ */
-/*  Data (sample — replace with your backend data)                     */
-/* ------------------------------------------------------------------ */
 const NAV = ["Schedules", "Services", "Payment", "Backup and Restore"];
 
 const DAYS = [
