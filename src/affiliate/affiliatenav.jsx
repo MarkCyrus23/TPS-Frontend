@@ -1,4 +1,6 @@
 import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Logo, Photo } from "../components/Layout";
 
 
 const ITEMS = [
@@ -55,26 +57,30 @@ const Icon = ({ name }) => {
     }
 };
 
-/**
- * active: "dashboard" | "appointment" | "schedules" | "payment"
- * Gamitin sa bawat page: <AffiliateNavigation active="payment" />
- */
-export default function AffiliateNavigation({ active = "dashboard" }) {
+export default function AffiliateNavigation() {
+    const { pathname } = useLocation();
+
     return (
-        <aside className="sticky top-0 h-[923px] w-[321px] shrink-0 self-start overflow-hidden rounded-r-[50px] bg-[#1f4d3f]">
+        <>
+        <aside className="fixed left-0 top-0 z-50 h-screen w-[321px] shrink-0 overflow-y-auto rounded-r-[50px] bg-[#1f4d3f]">
             {/* Brand header */}
-            <div className="absolute left-[15px] top-[43px] flex items-center gap-3">
-                <img
-                    src="/img/threefold-logo-6.png"
-                    alt="Threefold Logo"
-                    className="h-[66px] w-[70px] object-cover"
-                />
-                <div>
-                    <h1 className="font-serif text-[20px] leading-[20px] text-[#3d865b]">THREEFOLD</h1>
-                    <p className="whitespace-nowrap font-serif text-[15px] leading-[15px] text-[#3d865b]">
-                        Behavioral Interventions And Psychological Services
-                    </p>
-                </div>
+            <div className="relative mt-[38px] px-[26px]">
+                <Link to="/" className="group flex items-center gap-[12px] no-underline" aria-label="Threefold Home">
+                    <Photo
+                        src="/img/logo.png"
+                        alt="Threefold Logo"
+                        className="h-[42px] w-[42px] shrink-0 object-contain transition-transform group-hover:scale-105"
+                        fallback={<Logo size={42} />}
+                    />
+                    <div className="flex flex-col">
+                        <span className="font-['Inria_Serif',Georgia,serif] text-[15px] font-bold leading-[16px] tracking-[0.05em] text-[#f2f7f4] transition-colors group-hover:text-white">
+                            THREEFOLD
+                        </span>
+                        <span className="mt-[3px] max-w-[195px] font-['Inria_Serif',Georgia,serif] text-[8px] leading-[11px] text-[#a8c8b8]">
+                            Behavioral Interventions And Psychological Services
+                        </span>
+                    </div>
+                </Link>
             </div>
 
             <span className="absolute left-[40px] top-[164px] block text-[14px] font-bold uppercase tracking-[2.52px] text-[#a8c8b8]">
@@ -84,11 +90,11 @@ export default function AffiliateNavigation({ active = "dashboard" }) {
             {/* Menu: bawat item may sariling slot, ang active ang nagiging white pill */}
             <nav className="absolute left-[26px] right-0 top-[192px] flex flex-col gap-[16px]">
                 {ITEMS.map((item) => {
-                    const isActive = item.key === active;
+                    const isActive = pathname === item.href;
                     return (
-                        <a
+                        <Link
                             key={item.key}
-                            href={item.href}
+                            to={item.href}
                             aria-current={isActive ? "page" : undefined}
                             className={`flex h-[56px] items-center rounded-l-[28px] pl-[14px] ${
                                 isActive
@@ -98,7 +104,7 @@ export default function AffiliateNavigation({ active = "dashboard" }) {
                         >
                             {isActive && <Icon name={item.icon} />}
                             {item.label}
-                        </a>
+                        </Link>
                     );
                 })}
             </nav>
@@ -110,5 +116,7 @@ export default function AffiliateNavigation({ active = "dashboard" }) {
                 Logout
             </a>
         </aside>
+        <div className="w-[321px] shrink-0" aria-hidden="true" />
+        </>
     );
 }
