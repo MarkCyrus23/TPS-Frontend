@@ -1,0 +1,125 @@
+/* ---------- Header ---------- */
+.cf-head {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.cf-head h2 {
+  font-family: "Inria Serif", Georgia, serif;
+  font-size: 1.6rem;
+  font-weight: 400;
+  color: #202020;
+  margin: 0 0 8px;
+}
+.cf-head p {
+  font-family: "Inria Serif", Georgia, serif;
+  font-size: 0.95rem;
+  color: #202020;
+  margin: 0;
+}
+.cf-head strong {
+  font-weight: 700;
+}
+
+/* ---------- Receipt Card ---------- */
+.cf-receipt {
+  background: #fff;
+  border: 1px solid #6666667a;
+  border-radius: 16px;
+  padding: 8px 24px;
+  margin-bottom: 24px;
+}
+
+.cf-receipt__row {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px dashed #d0e5dd;
+}
+.cf-receipt__row:last-child {
+  border-bottom: 0;
+}
+
+.cf-receipt__row dt {
+  font-family: "Inria Serif", Georgia, serif;
+  font-size: 0.95rem;
+  color: #666;
+  margin: 0;
+}
+
+.cf-receipt__row dd {
+  font-family: "Inria Serif", Georgia, serif;
+  font-size: 0.95rem;
+  color: #202020;
+  margin: 0;
+  white-space: pre-line; /* Allows the \n in the Date to break properly */
+}
+
+/* ---------- Address Notes ---------- */
+.cf-notes {
+  background: #fff;
+  border: 1px solid #6666667a;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+.cf-notes p {
+  font-family: "Inria Serif", Georgia, serif;
+  font-size: 0.9rem;
+  color: #202020;
+  line-height: 1.6;
+  margin: 0;
+}
+.cf-notes__link {
+  color: #202020;
+  text-decoration: underline;
+  font-weight: 700;
+}
+.cf-notes__link:hover {
+  color: #4a9b8e;
+}
+
+/* ---------- Actions ---------- */
+.cf-actions {
+  justify-content: center;
+  gap: 24px;
+  border-top: 0;
+  padding-top: 0;
+}
+
+.cf-link {
+  font-family: "Inria Serif", Georgia, serif;
+  font-size: 0.95rem;
+  color: #202020;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+.cf-link:hover {
+  border-color: currentColor;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 720px) {
+  .cf-receipt__row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .cf-receipt__row dt {
+    font-size: 0.8rem;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .cf-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  .cf-actions .btn {
+    width: 100%;
+  }
+  .cf-link {
+    text-align: center;
+    padding: 12px;
+  }
+}

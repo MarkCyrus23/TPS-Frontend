@@ -1,0 +1,71 @@
+/* Services page. Uses tokens from Home.css (.tf scope). All new classes are prefixed sv- so they never
+   collide with Home.css (which already has .service, .services, .section, etc.). */
+
+/* Active nav link (shared by every page) */
+.tf .nav__links a[aria-current="page"] { color: #000; }
+.tf .nav__links a[aria-current="page"]::after { transform: scaleX(1); }
+
+/* ---------- Intro ---------- */
+.sv-intro { position: relative; isolation: isolate; overflow: hidden; padding-block: clamp(48px, 7vw, 96px); }
+.sv-intro__tree { position: absolute; right: -4%; bottom: -6%; width: min(46vw, 560px); opacity: .22; z-index: -1; pointer-events: none; }
+.sv-intro__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 470px); gap: clamp(32px, 6vw, 96px); align-items: center; }
+.sv-intro h1 { font-weight: 600; font-size: clamp(30px, 4.2vw, 40px); line-height: 1.15; margin: 10px 0 18px; max-width: 14ch; }
+.sv-intro h1 em { font-style: normal; color: var(--teal); }
+.sv-intro__lead { font-size: 16px; line-height: 1.6; color: rgba(0, 0, 0, .7); max-width: 440px; }
+.sv-scroll { display: inline-flex; align-items: center; gap: 12px; margin-top: 28px; font-size: 12px; color: rgba(0, 0, 0, .7); }
+.sv-scroll__dot { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, .25); transition: background .25s, border-color .25s; }
+.sv-scroll:hover .sv-scroll__dot { background: #fff; border-color: var(--teal); }
+
+/* At-a-glance card */
+.sv-glance { background: #fafafa; border: 1px solid rgba(0, 0, 0, .15); border-radius: 19px; padding: 24px 26px 8px; }
+.sv-glance h2 { font-size: 15px; font-weight: 400; }
+.sv-glance > p { margin-top: 4px; font-size: 11px; color: rgba(0, 0, 0, .55); }
+.sv-glance ul { margin-top: 14px; }
+.sv-glance li + li { border-top: 1px solid var(--line); }
+.sv-glance__row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 14px; padding: 16px 0; transition: transform .25s var(--ease); }
+.sv-glance__row:hover { transform: translateX(3px); }
+.sv-glance__text b { display: block; font-weight: 400; font-size: 14px; }
+.sv-glance__text small { display: block; margin-top: 3px; font-size: 10px; color: rgba(0, 0, 0, .55); }
+.sv-glance__time { font-family: var(--serif); font-size: 14px; color: var(--teal); white-space: nowrap; }
+.sv-glance__go { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #c9e0d5; color: var(--ink); transition: background .25s, color .25s; }
+.sv-glance__row:hover .sv-glance__go { background: var(--teal); color: #fff; }
+
+/* ---------- Service blocks ---------- */
+.sv-list { padding-bottom: clamp(40px, 6vw, 80px); }
+.sv-wrap + .sv-wrap { border-top: 1px solid var(--line); }
+.sv { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: clamp(28px, 5vw, 80px); align-items: start; padding-block: clamp(44px, 6vw, 80px); }
+
+.sv__head { display: flex; align-items: center; gap: 16px; }
+.sv__badge { flex: none; display: grid; align-content: center; justify-items: center; width: 66px; height: 66px; border-radius: 50%; border: 4px solid #10a28c; font-family: var(--serif); line-height: 1; }
+.sv__badge b { font-size: 22px; font-weight: 400; }
+.sv__badge i { font-size: 11px; font-style: normal; margin-top: 2px; }
+.sv__meta { display: grid; gap: 3px; font-family: var(--serif); }
+.sv__meta span { font-size: 14px; color: #10a28c; }
+.sv__meta small { font-size: 11px; color: #666; }
+
+.sv h2 { font-family: var(--serif); font-weight: 700; color: var(--ink); font-size: clamp(28px, 3.6vw, 40px); line-height: 1.12; margin: 22px 0 14px; }
+.sv__text { font-family: var(--serif); font-size: clamp(17px, 2vw, 20px); line-height: 1.55; color: #666; max-width: 52ch; }
+.sv__actions { display: flex; align-items: center; flex-wrap: wrap; gap: 22px; margin-top: 28px; }
+.sv__actions .link-soft { color: var(--ink); }
+
+/* Right-hand details panel */
+.sv__panel { background: #fff; border-radius: 12px; padding: clamp(22px, 3vw, 32px); }
+.sv__label { font-family: var(--serif); font-weight: 400; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: #666; margin-bottom: 12px; }
+.sv__panel .tags { margin: 0 0 30px; }
+.sv__steps { display: grid; gap: 18px; position: relative; padding-left: 22px; }
+.sv__steps::before { content: ""; position: absolute; left: 4px; top: 8px; bottom: 8px; width: 1px; background: rgba(74, 155, 142, .45); }
+.sv__steps li { position: relative; font-family: var(--serif); font-size: 15px; line-height: 1.5; color: #666; }
+.sv__steps li::before { content: ""; position: absolute; left: -22px; top: 6px; width: 9px; height: 9px; border-radius: 50%; background: var(--teal); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+  .sv-intro__grid, .sv { grid-template-columns: 1fr; }
+  .sv-intro h1 { max-width: none; }
+  .sv-intro__tree { width: 90vw; right: -20%; opacity: .14; }
+}
+@media (max-width: 560px) {
+  .sv-glance { padding-inline: 18px; }
+  .sv-glance__row { grid-template-columns: 1fr auto; }
+  .sv-glance__go { display: none; }
+  .sv__actions .btn { flex: 1; min-width: 140px; }
+}
