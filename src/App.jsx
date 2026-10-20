@@ -9,24 +9,28 @@ import ReviewAndPay from "./BookSession/ReviewAndPay";
 import Confirmation from "./BookSession/Confirmation";
 import MyAppointments from "./MyAppointments/MyAppointments";
 import Contact from "./Contact/Contact";
-
+import AdminDashboard from "./admin/admindashboard";
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/services" element={<Services />} />
       <Route path="/signin" element={<SignIn />} />
-      
+
       {/* Booking Flow */}
       <Route path="/book" element={<BookSession />} />
       <Route path="/book/date-time" element={<DateTime />} />
       <Route path="/book/info" element={<UserInfo />} />
       <Route path="/book/review" element={<ReviewAndPay />} />
       <Route path="/book/confirmation" element={<Confirmation />} />
-      
+
+
       {/* Dashboard & Messages */}
       <Route path="/appointments" element={<MyAppointments />} />
       <Route path="/Contact" element={<Contact />} />
+
+      {/* ADMIN*/}
+      <Route path="/admin" element={<AdminDashboard />} />
     </Routes>
   );
 }
