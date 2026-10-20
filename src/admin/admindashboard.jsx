@@ -1,6 +1,6 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import { Photo, Logo } from "../components/Layout";
+import AdminNavigation from "./adminnavigation";
+import { Logo } from "../components/Layout";
 
 
 const FONT_CSS = `@import url('https://fonts.googleapis.com/css2?family=Inknut+Antiqua:wght@600&family=Inria+Serif:wght@400;700&family=Inter:wght@400;600;700&display=swap');`;
@@ -12,8 +12,6 @@ const inknut = "font-['Inknut_Antiqua',Georgia,serif]";
 /* ------------------------------------------------------------------ */
 /*  Data                                                               */
 /* ------------------------------------------------------------------ */
-const NAV = ["Appointment", "Schedules", "Services", "Payment", "Backup and Restore"];
-
 const MONTHS = [
     { m: "May", h: 166 },
     { m: "Jun", h: 212 },
@@ -130,71 +128,6 @@ const SPARK_C = {
     d: "M0 30 C25 36 40 20 60 24 S95 34 115 22 S150 12 170 14 S180 8 184 6",
     area: "M0 30 C25 36 40 20 60 24 S95 34 115 22 S150 12 170 14 S180 8 184 6 V45 H0Z",
 };
-
-/* ------------------------------------------------------------------ */
-/*  Sidebar                                                            */
-/* ------------------------------------------------------------------ */
-const Sidebar = () => (
-    <aside className="sticky top-0 flex h-screen w-[321px] shrink-0 flex-col self-start rounded-tr-[64px] rounded-br-[64px] rounded-bl-[32px] bg-[#1f4d3f]">
-        {/* Brand */}
-        <div className="relative mt-[38px] px-[26px]">
-            <Link to="/" className="group flex items-center gap-[12px] no-underline" aria-label="Threefold Home">
-                <Photo
-                    src="/img/logo.png"
-                    className="h-[42px] w-[42px] shrink-0 object-contain transition-transform group-hover:scale-105"
-                    fallback={<Logo size={42} />}
-                />
-                <div className="flex flex-col">
-                    <span className={`${serif} text-[15px] font-bold tracking-[0.05em] text-[#f2f7f4] leading-[16px] transition-colors group-hover:text-white`}>
-                        THREEFOLD
-                    </span>
-                    <span className={`${serif} mt-[3px] max-w-[195px] text-[8px] leading-[11px] text-[#a8c8b8]`}>
-                        Behavioral Interventions And Psychological Services
-                    </span>
-                </div>
-            </Link>
-        </div>
-
-        {/* Menu label */}
-        <div className={`${inter} mt-[44px] px-[40px] text-[14px] font-bold tracking-[2.52px] text-[#a8c8b8]`}>
-            MENU
-        </div>
-
-        {/* Active tab: white pill flush with the sidebar's right edge */}
-        <div className="relative ml-[26px] mt-[16px] h-[52px] rounded-l-[26px] bg-white">
-            <svg className="absolute left-[23px] top-[16px]" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#1f6b55" strokeWidth="1.8">
-                <rect x="2" y="2" width="6" height="6" rx="1.2" />
-                <rect x="12" y="2" width="6" height="6" rx="1.2" />
-                <rect x="2" y="12" width="6" height="6" rx="1.2" />
-                <rect x="12" y="12" width="6" height="6" rx="1.2" />
-            </svg>
-            <span className={`${inter} absolute left-[63px] top-[15px] text-[18px] font-bold text-[#1f6b55]`}>
-                Dashboard
-            </span>
-        </div>
-
-        {/* Nav */}
-        <nav className="mt-[44px] flex flex-col gap-[41px] px-[40px]">
-            {NAV.map((item) => (
-                <Link
-                    key={item}
-                    to={item === "Schedules" ? "/admin/schedule" : "#"}
-                    className={`${inknut} text-[20px] font-semibold text-[#2a8570] transition-colors hover:text-[#4fbfa5] no-underline`}
-                >
-                    {item}
-                </Link>
-            ))}
-        </nav>
-
-        {/* Logout */}
-        <a
-            href="#"
-            className={`${inknut} mt-auto mb-[64px] px-[38px] text-[20px] font-semibold text-[#2a8570] transition-colors hover:text-[#4fbfa5]`}
-        >
-            Logout
-        </a>
-    </aside>
-);
 
 /* ------------------------------------------------------------------ */
 /*  Sections                                                           */
@@ -618,7 +551,7 @@ export default function AdminDashboard() {
         <div className="flex min-h-screen w-full min-w-[1440px] bg-[#f2f2f2] antialiased">
             <style>{FONT_CSS}</style>
 
-            <Sidebar />
+            <AdminNavigation />
 
             <main className="flex-1 px-[41px] pb-[60px] pt-[51px]">
                 <Header />
