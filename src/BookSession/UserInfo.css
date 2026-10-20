@@ -1,0 +1,186 @@
+/* ---------- Form ---------- */
+.bs-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.bs-form__section {
+  margin: 12px 0 0;
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  color: #4a9b8e;
+}
+
+.bs-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.bs-form__foot {
+  margin: 4px 0 0;
+  color: #666;
+  font-size: 0.78rem;
+}
+
+/* ---------- Field ---------- */
+.bs-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bs-field--full {
+  grid-column: 1 / -1;
+}
+
+.bs-field__label {
+  font-family: "Inria Serif", Georgia, serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #202020;
+}
+
+.bs-field__hint {
+  margin-left: 6px;
+  font-family: "Inter", sans-serif;
+  font-weight: 400;
+  font-size: 0.7rem;
+  color: #666;
+}
+
+.bs-field input,
+.bs-field textarea {
+  font-family: "Inria Serif", Georgia, serif;
+  font-size: 0.9rem;
+  color: #202020;
+  background: #fff;
+  border: 1px solid #00000024;
+  border-radius: 8px;
+  padding: 11px 14px;
+  width: 100%;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+.bs-field textarea {
+  resize: vertical;
+  min-height: 110px;
+}
+.bs-field input:focus,
+.bs-field textarea:focus {
+  border-color: #4a9b8e;
+  box-shadow: 0 0 0 3px #4a9b8e26;
+}
+.bs-field input::placeholder,
+.bs-field textarea::placeholder {
+  color: #666666bd;
+}
+
+/* ---------- Format picker ---------- */
+.bs-format {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.bs-format__card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid #00000024;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.bs-format__card:hover {
+  border-color: #4a9b8e;
+}
+.bs-format__card.is-selected {
+  border-color: #4a9b8e;
+  background: #9ac5be3d;
+  box-shadow: 0 0 0 2px #4a9b8e33;
+}
+
+.bs-format__dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid #66666685;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+.bs-format__card.is-selected .bs-format__dot {
+  border: 6px solid #4a9b8e;
+}
+.bs-format__dot > i {
+  display: none;
+}
+
+.bs-format__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.15;
+}
+.bs-format__text strong {
+  font-family: "Inria Serif", Georgia, serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #202020;
+}
+.bs-format__text small {
+  font-family: "Inria Serif", Georgia, serif;
+  font-weight: 700;
+  font-size: 0.68rem;
+  color: #666;
+}
+
+/* ---------- Consent ---------- */
+.bs-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #9ac5be3d;
+  border-radius: 13px;
+  padding: 14px 16px;
+  cursor: pointer;
+  font-family: "Inria Serif", Georgia, serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #666666bd;
+  line-height: 1.45;
+}
+.bs-consent input {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 1px 0 0;
+  accent-color: #4a9b8e;
+  cursor: pointer;
+}
+.bs-consent__link {
+  color: inherit;
+  text-decoration: underline;
+}
+.bs-consent__link:hover {
+  color: #202020;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 720px) {
+  .bs-form__row {
+    grid-template-columns: 1fr;
+  }
+  .bs-format {
+    grid-template-columns: 1fr;
+  }
+  .bs-consent {
+    font-size: 0.8rem;
+  }
+}

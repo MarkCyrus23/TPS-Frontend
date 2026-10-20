@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import "./Home.css";
+import { Navbar, Footer, Reveal, SectionHead, Photo } from "../components/Layout";
 
 /* ---------- Built-in graphics (no image files needed) ---------- */
 function Logo({ size = 40 }) {
@@ -22,6 +23,7 @@ const ICONS = {
   blocks: <><rect x="10" y="32" width="20" height="20" rx="3" /><rect x="34" y="32" width="20" height="20" rx="3" /><rect x="22" y="10" width="20" height="20" rx="3" /></>,
   check: <><rect x="14" y="10" width="36" height="46" rx="5" /><path d="M24 34l6 6 11-13" /></>,
 };
+
 function Icon({ name, size = 64 }) {
   return (
     <svg className="icon" width={size} height={size} viewBox="0 0 64 64" fill="none" stroke="currentColor"
@@ -31,39 +33,37 @@ function Icon({ name, size = 64 }) {
   );
 }
 
-/* Sign In link, or Sign Out once logged in (demo auth via sessionStorage) */
-function AuthButton({ className, onDone }) {
-  const [authed, setAuthed] = useState(() => sessionStorage.getItem("tf_auth") === "1");
-  if (authed) {
-    return (
-      <button
-        className={className}
-        onClick={() => {
-          sessionStorage.removeItem("tf_auth");
-          setAuthed(false);
-          onDone?.();
-        }}
-      >
-        Sign Out
-      </button>
-    );
-  }
-  return (
-    <Link to="/signin" className={className} onClick={onDone}>
-      Sign In
-    </Link>
-  );
-}
+const LeafVine = ({ className }) => (
+  <svg className={`deco-vine ${className}`} viewBox="0 0 100 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M50 0 C50 50 10 100 10 150 C10 180 30 200 50 200" stroke="#2a6a53" strokeWidth="1.5" />
+    <path d="M30 40 Q50 30 60 50 Q40 60 30 40" fill="#2a6a53" opacity="0.8" />
+    <path d="M15 90 Q35 70 45 90 Q25 110 15 90" fill="#2a6a53" opacity="0.8" />
+    <path d="M20 140 Q40 130 50 150 Q30 160 20 140" fill="#2a6a53" opacity="0.8" />
+    <path d="M60 70 Q80 50 90 70 Q70 90 60 70" fill="#2a6a53" opacity="0.6" />
+    <path d="M40 180 Q60 170 70 190 Q50 200 40 180" fill="#2a6a53" opacity="0.6" />
+  </svg>
+);
 
-/* Shows /public/img/<file> if it exists, otherwise the built-in fallback */
-function Photo({ src, fallback, className, alt = "" }) {
-  const [ok, setOk] = useState(true);
-  return ok ? (
-    <img className={className} src={src} alt={alt} onError={() => setOk(false)} />
-  ) : (
-    fallback
-  );
-}
+const HeadIcon = ({ className }) => (
+  <svg className={`deco-head ${className}`} viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M100 20 C130 20 160 50 160 90 C160 120 140 140 120 150 C110 155 100 170 90 170 C80 170 70 160 70 150 C70 140 80 130 90 130 C100 130 110 120 110 110 C110 100 100 90 90 90 C80 90 70 100 60 100 C50 100 40 90 40 80 C40 50 70 20 100 20 Z" stroke="#2a6a53" strokeWidth="1.5" />
+    <path d="M120 80 C130 80 140 90 140 100" stroke="#2a6a53" strokeWidth="1.5" strokeLinecap="round" />
+    <path d="M80 110 C85 115 90 120 100 120" stroke="#2a6a53" strokeWidth="1.5" strokeLinecap="round" />
+    <path d="M150 120 Q170 120 180 140 Q170 160 150 160" stroke="#2a6a53" strokeWidth="1.5" />
+    <path d="M160 130 Q175 130 185 140" stroke="#2a6a53" strokeWidth="1.5" />
+  </svg>
+);
+
+const FloatingDots = ({ className }) => (
+  <svg className={`deco-dots ${className}`} viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="10" cy="10" r="3" fill="#4a9b8e" opacity="0.6" />
+    <circle cx="25" cy="5" r="2" fill="#4a9b8e" opacity="0.4" />
+    <circle cx="5" cy="25" r="2" fill="#4a9b8e" opacity="0.4" />
+    <circle cx="40" cy="15" r="4" fill="#4a9b8e" opacity="0.7" />
+    <circle cx="20" cy="40" r="3" fill="#4a9b8e" opacity="0.5" />
+    <circle cx="45" cy="40" r="2" fill="#4a9b8e" opacity="0.6" />
+  </svg>
+);
 
 function HeroArt() {
   const leaf = (x, y, r, c, s = 1) => (
@@ -71,7 +71,7 @@ function HeroArt() {
       d="M0 0C30-40 90-40 120 0 90 40 30 40 0 0z" />
   );
   return (
-    <svg className="hero__art" viewBox="0 0 600 520" aria-hidden="true">
+    <svg className="how__tree-img" viewBox="0 0 600 520" aria-hidden="true">
       <circle cx="400" cy="270" r="210" fill="#cfe4dc" opacity=".6" />
       <circle cx="470" cy="330" r="130" fill="#aac6b7" opacity=".55" />
       <path d="M300 520C300 380 330 260 420 120" stroke="#3d865b" strokeWidth="6" fill="none" strokeLinecap="round" />
@@ -86,15 +86,7 @@ function HeroArt() {
   );
 }
 
-/* ---------- Content (edit here, not in the markup) ---------- */
-const NAV = [
-  { label: "Home", href: "#top" },
-  { label: "About", href: "#about" },
-  { label: "Services", href: "#services" },
-  { label: "Book Session", href: "#book" },
-  { label: "Contact", href: "#contact" },
-];
-
+/* ---------- Content ---------- */
 const STEPS = [
   { icon: "select", title: "Select your service", text: "Explore and choose from our range of mental health services (Psychotherapy, Counseling, ABA Therapy, Assessment) that best fit your needs." },
   { icon: "calendar", title: "Choose your schedule", text: "Select a convenient date and time for your initial virtual or in-person appointment that works for you." },
@@ -120,7 +112,6 @@ const STORIES = [
   { who: "M.C", text: "I appreciate having a safe space where I can talk freely. The guidance helped me reflect on my experiences and find healthier ways to cope with stress." },
 ];
 
-/* TODO: replace the placeholder answers with your client's real copy */
 const FAQS = [
   { q: "Is everything I share confidential?", a: "Yes. Your sessions are private and handled according to professional ethics and applicable privacy laws. Limits to confidentiality are explained before your first session." },
   { q: "Do you offer online and in-person sessions?", a: "Yes. You can choose a virtual or an in-person appointment when you book." },
@@ -130,87 +121,7 @@ const FAQS = [
   { q: "Can children and teens be seen?", a: "Yes. Our ABA Therapy and counseling services support children and teens, with parents or guardians involved." },
 ];
 
-/* ---------- Small helpers ---------- */
-function Reveal({ children, delay = 0, className = "" }) {
-  const ref = useRef(null);
-  const [shown, setShown] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || !("IntersectionObserver" in window)) return setShown(true);
-    const io = new IntersectionObserver(
-      ([e]) => e.isIntersecting && (setShown(true), io.disconnect()),
-      { threshold: 0.15, rootMargin: "0px 0px -8% 0px" }
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-  return (
-    <div ref={ref} className={`reveal ${shown ? "is-in" : ""} ${className}`} style={{ "--d": `${delay}ms` }}>
-      {children}
-    </div>
-  );
-}
-
-function SectionHead({ eyebrow, title, sub, align = "center" }) {
-  return (
-    <header className={`sec-head sec-head--${align}`}>
-      <p className="eyebrow">{eyebrow}</p>
-      <h2>{title}</h2>
-      {sub && <p className="sec-sub">{sub}</p>}
-    </header>
-  );
-}
-
 /* ---------- Sections ---------- */
-function Navbar() {
-  const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const on = () => setScrolled(window.scrollY > 8);
-    on();
-    window.addEventListener("scroll", on, { passive: true });
-    return () => window.removeEventListener("scroll", on);
-  }, []);
-  return (
-    <header className={`nav ${scrolled ? "nav--scrolled" : ""}`}>
-      <div className="nav__inner">
-        <a href="#top" className="brand" aria-label="Threefold home">
-          <Photo src="/img/logo.png" className="brand__logo" fallback={<Logo />} />
-          <span>
-            <strong>THREEFOLD</strong>
-            <small>Behavioral Interventions And Psychological Services</small>
-          </span>
-        </a>
-
-        <nav className={`nav__links ${open ? "is-open" : ""}`} aria-label="Primary">
-          {NAV.map((l) => (
-            <a key={l.label} href={l.href} onClick={() => setOpen(false)}>{l.label}</a>
-          ))}
-          <a href="#book" className="nav__appt" onClick={() => setOpen(false)}>My appointments</a>
-          <div className="nav__cta-mobile">
-            <AuthButton className="btn btn--ghost" onDone={() => setOpen(false)} />
-            <button className="btn btn--solid">Get Started</button>
-          </div>
-        </nav>
-
-        <div className="nav__cta">
-          <AuthButton className="btn btn--ghost btn--sm" />
-          <button className="btn btn--solid btn--sm">Get Started</button>
-        </div>
-
-        <button
-          className={`burger ${open ? "is-open" : ""}`}
-          aria-label="Toggle menu"
-          aria-expanded={open}
-          onClick={() => setOpen((o) => !o)}
-        >
-          <span /><span /><span />
-        </button>
-      </div>
-    </header>
-  );
-}
-
 function Hero() {
   return (
     <section className="hero" id="top">
@@ -225,12 +136,11 @@ function Hero() {
             assessment consultation in a safe and supportive environment.
           </p>
           <div className="hero__actions">
-            <a href="#book" className="btn btn--solid btn--lg">Book an Appointment</a>
+            <Link to="/book" className="btn btn--solid btn--lg">Book an Appointment</Link>
             <a href="#how" className="link-soft">Learn how it works</a>
           </div>
         </div>
       </div>
-      <Photo src="/img/tree.png" className="hero__tree" fallback={<HeroArt />} />
     </section>
   );
 }
@@ -238,6 +148,12 @@ function Hero() {
 function HowItWorks() {
   return (
     <section className="section how" id="how">
+      {/* The tree wrapper overlaps the sections */}
+      <div className="how__tree-wrapper">
+        <Photo src="/img/tree.png" className="how__tree-img" fallback={<HeroArt />} />
+      </div>
+      
+      <LeafVine className="how__vine" />
       <div className="container">
         <Reveal>
           <SectionHead
@@ -272,6 +188,7 @@ function Services() {
       <div className="container">
         <Reveal>
           <SectionHead
+            align="center"
             eyebrow="OUR SERVICES"
             title="Comprehensive Mental Health Care"
             sub="Focused care tailored to your unique journey toward clarity and growth."
@@ -300,6 +217,8 @@ function Team() {
   const p = TEAM[i];
   return (
     <section className="section team" id="about">
+      <HeadIcon className="team__head-deco" />
+      <FloatingDots className="team__dots" />
       <div className="container">
         <Reveal>
           <h2 className="team__title">The people <span>behind</span> your care</h2>
@@ -377,9 +296,11 @@ function FAQ() {
   const [open, setOpen] = useState(0);
   return (
     <section className="section faq" id="faq">
+      <LeafVine className="faq__vine-left" />
+      <LeafVine className="faq__vine-right" />
       <div className="container faq__inner">
         <Reveal>
-          <SectionHead eyebrow="FAQ" title="Frequently asked questions" />
+          <SectionHead align="center" eyebrow="FAQ" title="Frequently asked questions" />
         </Reveal>
         <div className="faq__list">
           {FAQS.map((f, idx) => {
@@ -403,40 +324,6 @@ function FAQ() {
         </div>
       </div>
     </section>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="footer" id="contact">
-      <div className="container footer__grid">
-        <div className="footer__brand">
-          <a href="#top" className="brand brand--light">
-            <Photo src="/img/logo.png" className="brand__logo" fallback={<Logo />} />
-            <strong>THREEFOLD</strong>
-          </a>
-          <p>Bridging the gap between you and the mental clarity you deserve. Available anytime, anywhere.</p>
-        </div>
-        <div>
-          <h4>Services</h4>
-          <ul><li>Psychotherapy/Counseling</li><li>ABA Therapy</li><li>Assessment Consultation</li></ul>
-        </div>
-        <div>
-          <h4>Threefold</h4>
-          <ul>{["Home", "About", "Services", "Book Session", "Contact"].map((x) => <li key={x}><a href="#top">{x}</a></li>)}</ul>
-        </div>
-        <div>
-          <h4>Support</h4>
-          <ul>{["Help Center", "Book a Session", "Contact us", "Site map"].map((x) => <li key={x}><a href="#contact">{x}</a></li>)}</ul>
-        </div>
-      </div>
-      <div className="container footer__bar">
-        <p>© 2026 Threefold. All rights reserved. Made with 💚 for mental wellness.</p>
-        <p className="footer__legal">
-          <a href="#privacy">Privacy Policy</a><a href="#terms">Terms of Service</a><a href="#cookies">Cookie Policy</a>
-        </p>
-      </div>
-    </footer>
   );
 }
 
