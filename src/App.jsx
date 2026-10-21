@@ -6,9 +6,12 @@ import BookSession from "./BookSession/BookSession";
 import DateTime from "./BookSession/DateTime";
 import UserInfo from "./BookSession/UserInfo";
 import ReviewAndPay from "./BookSession/ReviewAndPay";
+import Approval from "./BookSession/Approval";
+import Consent from "./BookSession/Consent";
 import Confirmation from "./BookSession/Confirmation";
 import MyAppointments from "./MyAppointments/MyAppointments";
 import Contact from "./Contact/Contact";
+import RequireAuth from "./components/RequireAuth";
 import AdminDashboard from "./admin/admindashboard";
 import AdminAppointment from "./admin/adminappointment";
 import AdminPayment from "./admin/adminpay";
@@ -32,12 +35,35 @@ export default function App() {
       <Route path="/book/date-time" element={<DateTime />} />
       <Route path="/book/info" element={<UserInfo />} />
       <Route path="/book/review" element={<ReviewAndPay />} />
+      <Route path="/book/approval" element={<Approval />} />
+      <Route path="/book/consent" element={<Consent />} />
       <Route path="/book/confirmation" element={<Confirmation />} />
 
-
-      {/* Dashboard & Messages */}
-      <Route path="/appointments" element={<MyAppointments />} />
-      <Route path="/Contact" element={<Contact />} />
+      {/* Dashboard & Messages (auth required for demo) */}
+      <Route
+        path="/appointments"
+        element={
+          <RequireAuth>
+            <MyAppointments />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/contact"
+        element={
+          <RequireAuth>
+            <Contact />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/Contact"
+        element={
+          <RequireAuth>
+            <Contact />
+          </RequireAuth>
+        }
+      />
 
       {/* ADMIN */}
       <Route path="/admin" element={<AdminDashboard />} />

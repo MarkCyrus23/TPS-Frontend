@@ -1,36 +1,23 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import "./SignIn.css";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Navbar, Footer, Logo, btnSolid, btnGhost } from "../components/Layout";
 
-/* ---- Demo credentials (presentation only) ---- */
 const DEMO_USER = "admin";
 const DEMO_PASS = "12345";
 
-function Logo({ size = 40 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true">
-      <circle cx="20" cy="12" r="9" fill="#4a9b8e" opacity=".85" />
-      <circle cx="12" cy="26" r="9" fill="#3d865b" opacity=".85" />
-      <circle cx="28" cy="26" r="9" fill="#00a58a" opacity=".85" />
-    </svg>
-  );
-}
-
-function GoogleIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
-      <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z" />
-      <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z" />
-      <path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.3.8-4.7l-7.9-6.1C.9 16.4 0 20 0 24s.9 7.6 2.6 10.8l7.9-6.1z" />
-      <path fill="#34A853" d="M24 48c6.500 0 11.900-2.100 15.900-5.800l-7.500-5.800c-2.100 1.400-4.800 2.300-8.400 2.300-6.300 0-11.600-4.100-13.500-9.800l-7.900 6.100C6.500 42.600 14.600 48 24 48z" />
-    </svg>
-  );
-}
-
 function EyeIcon({ off }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
       <circle cx="12" cy="12" r="3" />
       {off && <path d="M3 3l18 18" />}
@@ -38,16 +25,19 @@ function EyeIcon({ off }) {
   );
 }
 
-const PERKS = [
-  "Personalised daily wellness check-ins",
-  "Guided meditations & breathing exercises",
-  "Private mood tracking & reflection journal",
-];
+const inputClass =
+  "mt-1.5 w-full rounded-lg border border-black/14 bg-white px-3.5 py-3 font-serif text-sm outline-none focus:border-tf-teal focus:shadow-[0_0_0_3px_rgba(74,155,142,0.15)]";
 
 export default function SignIn() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || "/appointments";
+
+  const [mode, setMode] = useState("signin"); // signin | signup | forgot
   const [username, setUsername] = useState(() => localStorage.getItem("tf_user") || "");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [remember, setRemember] = useState(() => !!localStorage.getItem("tf_user"));
   const [show, setShow] = useState(false);
   const [error, setError] = useState("");
@@ -57,6 +47,7 @@ export default function SignIn() {
 
   const fail = (msg) => {
     setError(msg);
+    setInfo("");
     setShaking(true);
     setTimeout(() => setShaking(false), 450);
   };
@@ -66,161 +57,281 @@ export default function SignIn() {
     if (loading) return;
     setError("");
     setInfo("");
-    if (!username.trim() || !password) return fail("Please enter your username and password.");
 
+    if (mode === "forgot") {
+      if (!email.includes("@")) return fail("Enter a valid email address.");
+      setInfo("If an account exists for that email, a reset link would be sent (demo only).");
+      return;
+    }
+
+    if (mode === "signup") {
+      if (!username.trim() || !email.includes("@") || password.length < 5) {
+        return fail("Enter a username, valid email, and password (min 5 characters).");
+      }
+      if (password !== confirm) return fail("Passwords do not match.");
+      setLoading(true);
+      setTimeout(() => {
+        sessionStorage.setItem("tf_auth", "1");
+        localStorage.setItem("tf_user", username.trim());
+        setLoading(false);
+        navigate(from);
+      }, 600);
+      return;
+    }
+
+    if (!username.trim() || !password) return fail("Please enter your username and password.");
     setLoading(true);
     setTimeout(() => {
-      const ok = username.trim().toLowerCase() === DEMO_USER && password === DEMO_PASS;
+      const ok =
+        username.trim().toLowerCase() === DEMO_USER && password === DEMO_PASS;
       if (!ok) {
         setLoading(false);
-        return fail("Incorrect username or password.");
+        return fail("Incorrect username or password. Demo: admin / 12345");
       }
-      remember ? localStorage.setItem("tf_user", username.trim()) : localStorage.removeItem("tf_user");
+      remember
+        ? localStorage.setItem("tf_user", username.trim())
+        : localStorage.removeItem("tf_user");
       sessionStorage.setItem("tf_auth", "1");
-      navigate("/");
+      setLoading(false);
+      navigate(from);
     }, 700);
   };
 
   return (
-    <div className="si">
-      {/* ---------- Header ---------- */}
-      <header className="si-nav">
-        <div className="si-nav__inner">
-          <Link to="/" className="si-brand" aria-label="Threefold home">
-            <Logo />
-            <span>
-              <strong>THREEFOLD</strong>
-              <small>Behavioral Interventions And Psychological Services</small>
-            </span>
-          </Link>
-          <nav className="si-nav__links" aria-label="Primary">
-            <Link to="/">Home</Link>
-            <a href="/#about">About</a>
-            <a href="/#services">Services</a>
-            <a href="/#how">Book Session</a>
-            <a href="/#contact">Contact</a>
-          </nav>
-          <div className="si-nav__cta">
-            <Link to="/signin" className="si-btn si-btn--ghost">Sign Up</Link>
-            <Link to="/signin" className="si-btn si-btn--solid">Get Started</Link>
-          </div>
+    <div className="font-sans text-black bg-tf-bg min-h-screen overflow-x-hidden antialiased">
+      <Navbar />
+      <main className="relative py-14 pb-24">
+        <div
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+          aria-hidden
+        >
+          <span className="absolute -left-20 top-10 size-64 rounded-full bg-tf-soft opacity-70" />
+          <span className="absolute -right-16 bottom-20 size-72 rounded-full bg-[#d7eee8] opacity-60" />
         </div>
-      </header>
 
-      {/* ---------- Main ---------- */}
-      <main className="si-main">
-        <span className="orb orb--1" /><span className="orb orb--2" /><span className="orb orb--3" />
-
-        <div className="si-grid">
-          <section className="si-welcome">
-            <div className="si-welcome__brand">
+        <div className="relative z-10 mx-auto grid w-[min(1040px,calc(100%-40px))] grid-cols-2 gap-10 max-[900px]:grid-cols-1">
+          <section className="flex flex-col justify-center max-[900px]:text-center">
+            <div className="mb-6 flex items-center gap-3 max-[900px]:justify-center">
               <Logo size={42} />
-              <span><strong>THREEFOLD</strong><small>Behavioral Interventions And Psychological Services</small></span>
+              <span>
+                <strong className="block font-serif text-sm tracking-[0.04em] text-tf-forest">
+                  THREEFOLD
+                </strong>
+                <small className="text-[10px] text-[#666]">
+                  Behavioral Interventions And Psychological Services
+                </small>
+              </span>
             </div>
-            <h1>
-              <b>Welcome back to</b>
-              <em>Threefold</em>
+            <h1 className="m-0 font-serif text-[clamp(2rem,4vw,2.8rem)] font-normal leading-tight text-[#111]">
+              Welcome back to <em className="italic text-tf-teal">Threefold</em>
             </h1>
-            <p>
-              Sign in to access your appointments, connect with your specialist, and continue your path
-              to mental wellness.
+            <p className="mt-4 max-w-md text-base leading-relaxed text-[#555] max-[900px]:mx-auto">
+              Sign in to manage appointments, message your care team, and continue your wellness
+              journey.
             </p>
-            <ul>
-              {PERKS.map((p) => (
-                <li key={p}><i />{p}</li>
+            <ul className="mt-6 list-none space-y-2 p-0 text-sm text-tf-body max-[900px]:mx-auto max-[900px]:text-left">
+              {[
+                "View and manage your appointments",
+                "Secure messaging with the clinic",
+                "Track payment and consent status",
+              ].map((p) => (
+                <li key={p} className="flex items-start gap-2">
+                  <span className="mt-1 size-1.5 shrink-0 rounded-full bg-tf-teal" />
+                  {p}
+                </li>
               ))}
             </ul>
           </section>
 
-          <section className="si-card" aria-labelledby="si-title">
-            <h2 id="si-title">Sign In</h2>
-            <p className="si-card__sub">Enter your credentials to continue</p>
+          <section
+            className={[
+              "rounded-2xl border border-black/10 bg-white p-8 shadow-[0_16px_40px_-24px_rgba(0,0,0,0.35)] max-[560px]:p-5",
+              shaking ? "animate-[tf-shake_0.45s_ease]" : "",
+            ].join(" ")}
+          >
+            <div className="mb-6 flex gap-2 rounded-[11px] bg-tf-teal/15 p-1">
+              {[
+                ["signin", "Sign In"],
+                ["signup", "Register"],
+              ].map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`flex-1 rounded-lg border-0 py-2 font-serif text-sm cursor-pointer ${
+                    mode === id || (mode === "forgot" && id === "signin")
+                      ? "bg-white font-bold shadow-sm"
+                      : "bg-transparent"
+                  }`}
+                  onClick={() => {
+                    setMode(id);
+                    setError("");
+                    setInfo("");
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
 
-            <form onSubmit={submit} noValidate className={shaking ? "is-shaking" : ""}>
-              <label className="field">
-                <span>USERNAME</span>
-                <input
-                  type="text"
-                  autoComplete="username"
-                  placeholder="admin"
-                  value={username}
-                  onChange={(e) => { setUsername(e.target.value); setError(""); setInfo(""); }}
-                  aria-invalid={!!error}
-                />
-              </label>
+            <h2 className="m-0 font-serif text-2xl text-[#202020]">
+              {mode === "signup"
+                ? "Create account"
+                : mode === "forgot"
+                  ? "Reset password"
+                  : "Sign In"}
+            </h2>
+            <p className="mt-1 text-sm text-[#666]">
+              {mode === "signup"
+                ? "Register for the client demo (stored locally)."
+                : mode === "forgot"
+                  ? "Enter your email to receive reset instructions."
+                  : "Demo credentials: admin / 12345"}
+            </p>
 
-              <label className="field">
-                <span>PASSWORD</span>
-                <div className="field__pw">
+            <form className="mt-6 flex flex-col gap-4" onSubmit={submit} noValidate>
+              {mode !== "forgot" && (
+                <label className="text-xs font-bold tracking-[0.08em] text-[#666]">
+                  USERNAME
+                  <input
+                    className={inputClass}
+                    value={username}
+                    onChange={(e) => {
+                      setUsername(e.target.value);
+                      setError("");
+                    }}
+                    autoComplete="username"
+                    placeholder="admin"
+                  />
+                </label>
+              )}
+
+              {(mode === "signup" || mode === "forgot") && (
+                <label className="text-xs font-bold tracking-[0.08em] text-[#666]">
+                  EMAIL
+                  <input
+                    type="email"
+                    className={inputClass}
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setError("");
+                    }}
+                    autoComplete="email"
+                    placeholder="you@email.com"
+                  />
+                </label>
+              )}
+
+              {mode !== "forgot" && (
+                <label className="text-xs font-bold tracking-[0.08em] text-[#666]">
+                  PASSWORD
+                  <div className="relative mt-1.5">
+                    <input
+                      type={show ? "text" : "password"}
+                      className={`${inputClass} !mt-0 pr-12`}
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setError("");
+                      }}
+                      autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 border-0 bg-transparent text-[#666] cursor-pointer"
+                      onClick={() => setShow((s) => !s)}
+                      aria-label={show ? "Hide password" : "Show password"}
+                    >
+                      <EyeIcon off={show} />
+                    </button>
+                  </div>
+                </label>
+              )}
+
+              {mode === "signup" && (
+                <label className="text-xs font-bold tracking-[0.08em] text-[#666]">
+                  CONFIRM PASSWORD
                   <input
                     type={show ? "text" : "password"}
-                    autoComplete="current-password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => { setPassword(e.target.value); setError(""); setInfo(""); }}
-                    aria-invalid={!!error}
+                    className={inputClass}
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    autoComplete="new-password"
                   />
-                  <button type="button" onClick={() => setShow((s) => !s)} aria-label={show ? "Hide password" : "Show password"}>
-                    <EyeIcon off={show} />
+                </label>
+              )}
+
+              {mode === "signin" && (
+                <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+                  <label className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className="size-4 accent-tf-teal"
+                      checked={remember}
+                      onChange={(e) => setRemember(e.target.checked)}
+                    />
+                    Remember me
+                  </label>
+                  <button
+                    type="button"
+                    className="border-0 bg-transparent p-0 text-tf-teal underline cursor-pointer"
+                    onClick={() => {
+                      setMode("forgot");
+                      setError("");
+                      setInfo("");
+                    }}
+                  >
+                    Forgot password?
                   </button>
                 </div>
-              </label>
+              )}
 
-              <div className="row">
-                <label className="check">
-                  <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
-                  <span>Remember me</span>
-                </label>
-                <button type="button" className="link" onClick={() => { setError(""); setInfo("Password reset is not available in this demo."); }}>
-                  Forgot password?
-                </button>
-              </div>
+              {(error || info) && (
+                <p
+                  role="alert"
+                  className={`m-0 rounded-lg px-4 py-3 text-sm ${
+                    error
+                      ? "border border-red-200 bg-red-50 text-red-800"
+                      : "border border-tf-teal/30 bg-tf-soft text-tf-ink"
+                  }`}
+                >
+                  {error || info}
+                </p>
+              )}
 
-              <p className={`si-msg ${error || info ? "is-on" : ""} ${error ? "is-error" : "is-info"}`} role="alert">{error || info}</p>
-
-              <button type="submit" className="si-submit" disabled={loading}>
-                {loading ? <i className="spin" aria-label="Signing in" /> : "Sign in"}
+              <button type="submit" className={`${btnSolid} w-full`} disabled={loading}>
+                {loading
+                  ? "Please wait…"
+                  : mode === "signup"
+                    ? "Create account"
+                    : mode === "forgot"
+                      ? "Send reset link"
+                      : "Sign in"}
               </button>
             </form>
 
-            <div className="or"><span>OR</span></div>
+            {mode === "forgot" && (
+              <button
+                type="button"
+                className={`${btnGhost} mt-4 w-full`}
+                onClick={() => setMode("signin")}
+              >
+                Back to Sign In
+              </button>
+            )}
 
-            <button type="button" className="google" onClick={() => { setError(""); setInfo("Google sign-in is not available in this demo."); }}>
-              <GoogleIcon /> Continue with Google
-            </button>
-
-            <p className="si-card__new">
-              New to Threefold? <button type="button" className="link link--bold">Create a free account</button>
+            <p className="mt-6 text-center text-sm text-[#666]">
+              New here?{" "}
+              <Link to="/book" className="font-semibold text-tf-teal no-underline hover:underline">
+                Book a session
+              </Link>{" "}
+              without an account, or register above.
             </p>
           </section>
         </div>
       </main>
-
-      {/* ---------- Footer ---------- */}
-      <footer className="si-footer">
-        <div className="si-footer__grid">
-          <div>
-            <div className="si-brand si-brand--light"><Logo /><strong>THREEFOLD</strong></div>
-            <p>Bridging the gap between you and the mental clarity you deserve. Available anytime, anywhere.</p>
-          </div>
-          <div>
-            <h4>Services</h4>
-            <ul><li>Psychotherapy/Counseling</li><li>ABA Therapy</li><li>Assessment Consultation</li></ul>
-          </div>
-          <div>
-            <h4>Threefold</h4>
-            <ul><li>Home</li><li>About</li><li>Services</li><li>Book Session</li><li>Contact</li></ul>
-          </div>
-          <div>
-            <h4>Support</h4>
-            <ul><li>Help Center</li><li>Book a Session</li><li>Contact us</li><li>Site map</li></ul>
-          </div>
-        </div>
-        <div className="si-footer__bar">
-          <p>© 2026 Threefold. All rights reserved. Made with 💚 for mental wellness.</p>
-          <p>Privacy Policy · Terms of Service · Cookie Policy</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

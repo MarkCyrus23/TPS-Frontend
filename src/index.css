@@ -1,13 +1,104 @@
+@import url("https://fonts.googleapis.com/css2?family=Inria+Serif:wght@400;700&family=Inter:wght@400;500;600;700&family=Lobster&family=Poppins:wght@400;600&display=swap");
 @import "tailwindcss";
+
+/* ---------- Design tokens (match existing client palette) ---------- */
+@theme {
+  --font-serif: "Inria Serif", Georgia, serif;
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-lobster: "Lobster", cursive;
+  --font-poppins: "Poppins", "Inter", system-ui, sans-serif;
+
+  --color-tf-teal: #4a9b8e;
+  --color-tf-green: #00a58a;
+  --color-tf-forest: #3d865b;
+  --color-tf-ink: #203e43;
+  --color-tf-body: #586b70;
+  --color-tf-navy: #181c3b;
+  --color-tf-footer: #1a2332;
+  --color-tf-bg: #f2f2f2;
+  --color-tf-bg-alt: #ededed;
+  --color-tf-mint: #f9fbf9;
+  --color-tf-soft: #eaf4f0;
+  --color-tf-line: rgba(0, 0, 0, 0.1);
+
+  --ease-tf: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 84px;
+}
 
 html,
 body,
 #root {
-    margin: 0;
-    padding: 0;
-    width: 100%;
+  margin: 0;
+  padding: 0;
+  width: 100%;
 }
 
 body {
-    min-height: 100vh;
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes tf-rise {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes tf-sway {
+  from {
+    transform: rotate(-0.6deg);
+  }
+  to {
+    transform: rotate(0.8deg);
+  }
+}
+
+@keyframes tf-fade-slide {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes tf-float {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(18px, -24px);
+  }
+}
+
+@keyframes tf-shake {
+  20%,
+  60% {
+    transform: translateX(-7px);
+  }
+  40%,
+  80% {
+    transform: translateX(7px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

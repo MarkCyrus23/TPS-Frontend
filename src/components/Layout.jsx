@@ -1,12 +1,30 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import "../Home/Home.css"; // shared design tokens, .tf scope, navbar, footer, buttons
 import { NAV } from "./navConfig";
+import { CLINIC } from "../data/clinic";
+
+/* ---------- Shared Tailwind helpers ---------- */
+export const container =
+  "w-[min(1240px,calc(100%-clamp(40px,10vw,160px)))] mx-auto relative z-10";
+
+export const btnBase =
+  "inline-flex items-center justify-center h-[42px] px-[22px] rounded-lg border border-black text-[15px] whitespace-nowrap transition-[transform,background,box-shadow,color] duration-250 ease-tf active:scale-[0.98] active:translate-y-0";
+
+export const btnSolid = `${btnBase} bg-tf-navy text-white border-none hover:-translate-y-0.5 hover:shadow-[0_10px_22px_-8px_rgba(24,28,59,0.55)] hover:text-white`;
+
+export const btnGhost =
+  `${btnBase} bg-transparent border-black/40 text-black hover:bg-black/5`;
+
+export const btnSm = "h-[34px] px-4 text-sm";
+export const btnLg = "h-12 px-7 text-base";
+
+const navLinkClass =
+  "relative py-1.5 transition-colors duration-200 hover:text-black aria-[current=page]:text-black max-[1100px]:py-3.5 max-[1100px]:border-b max-[1100px]:border-tf-line max-[1100px]:text-base after:content-[''] after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-tf-teal after:scale-x-0 after:origin-left after:transition-transform after:duration-[350ms] after:ease-tf hover:after:scale-x-100 aria-[current=page]:after:scale-x-100 max-[1100px]:after:hidden";
 
 /* ---------- Built-in graphics ---------- */
 export function Logo({ size = 40 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" className="shrink-0">
       <circle cx="20" cy="12" r="9" fill="#4a9b8e" opacity=".85" />
       <circle cx="12" cy="26" r="9" fill="#3d865b" opacity=".85" />
       <circle cx="28" cy="26" r="9" fill="#00a58a" opacity=".85" />
@@ -62,7 +80,11 @@ export function Reveal({ children, delay = 0, className = "" }) {
     return () => io.disconnect();
   }, []);
   return (
-    <div ref={ref} className={`reveal ${shown ? "is-in" : ""} ${className}`} style={{ "--d": `${delay}ms` }}>
+    <div
+      ref={ref}
+      className={`opacity-0 translate-y-4 transition-[opacity,transform] duration-700 ease-tf [transition-delay:var(--d)] motion-reduce:opacity-100 motion-reduce:translate-none ${shown ? "opacity-100 translate-none" : ""} ${className}`}
+      style={{ "--d": `${delay}ms` }}
+    >
       {children}
     </div>
   );
@@ -70,10 +92,16 @@ export function Reveal({ children, delay = 0, className = "" }) {
 
 export function SectionHead({ eyebrow, title, sub, align = "center" }) {
   return (
-    <header className={`sec-head sec-head--${align}`}>
-      <p className="eyebrow">{eyebrow}</p>
-      <h2>{title}</h2>
-      {sub && <p className="sec-sub">{sub}</p>}
+    <header
+      className={`grid gap-3 ${
+        align === "center" ? "text-center justify-items-center" : "text-left justify-items-start"
+      }`}
+    >
+      <p className="m-0 text-[13px] font-bold tracking-[0.1em] text-tf-teal">{eyebrow}</p>
+      <h2 className="m-0 text-[clamp(28px,3.4vw,40px)] font-normal leading-[1.15]">{title}</h2>
+      {sub && (
+        <p className="m-0 max-w-[560px] text-base leading-relaxed text-[#666d69]">{sub}</p>
+      )}
     </header>
   );
 }
@@ -81,15 +109,20 @@ export function SectionHead({ eyebrow, title, sub, align = "center" }) {
 /* ---------- Navigation (works from any page) ---------- */
 // "#x"  -> same-page anchor.   "/..." -> router link (hash handled by ScrollToHash)
 
-
 function NavItem({ to, className, onClick, children }) {
   const { pathname } = useLocation();
-  if (to.startsWith("#")) {
-    return <a href={to} className={className} onClick={onClick}>{children}</a>;
+  // Normalize relative paths (e.g. navConfig "Contact" -> "/Contact") without editing navConfig
+  const href = to.startsWith("#") || to.startsWith("/") ? to : `/${to}`;
+  if (href.startsWith("#")) {
+    return (
+      <a href={href} className={className} onClick={onClick}>
+        {children}
+      </a>
+    );
   }
-  const current = !to.includes("#") && pathname === to;
+  const current = !href.includes("#") && pathname === href;
   return (
-    <Link to={to} className={className} onClick={onClick} aria-current={current ? "page" : undefined}>
+    <Link to={href} className={className} onClick={onClick} aria-current={current ? "page" : undefined}>
       {children}
     </Link>
   );
@@ -121,40 +154,84 @@ export function Navbar() {
   const close = () => setOpen(false);
 
   return (
-    <header className={`nav ${scrolled ? "nav--scrolled" : ""}`}>
+    <header
+      className={`sticky top-0 z-50 bg-[#f8f8f8] border-b border-tf-line transition-shadow duration-300 relative ${
+        scrolled ? "shadow-[0_6px_24px_-14px_rgba(0,0,0,0.35)]" : ""
+      }`}
+    >
       <ScrollToHash />
-      <div className="nav__inner">
-        <Link to="/#top" className="brand" aria-label="Threefold home">
-          <Photo src="/img/logo.png" className="brand__logo" fallback={<Logo />} />
-          <span>
-            <strong>THREEFOLD</strong>
-            <small>Behavioral Interventions And Psychological Services</small>
+      <div className="w-[min(1360px,calc(100%-40px))] mx-auto h-[72px] flex items-center gap-6">
+        <Link
+          to="/#top"
+          className="flex items-center gap-2.5 font-serif text-tf-forest no-underline"
+          aria-label="Threefold home"
+        >
+          {/* Icon only (circles). The text next to it is the original wordmark. */}
+          <Logo size={40} />
+          <span className="flex flex-col gap-0.5">
+            <strong className="text-sm tracking-[0.04em] font-normal">THREEFOLD</strong>
+            <small className="text-[7px] leading-[1.3] max-w-[190px] max-[560px]:hidden">
+              Behavioral Interventions And Psychological Services
+            </small>
           </span>
         </Link>
 
-        <nav className={`nav__links ${open ? "is-open" : ""}`} aria-label="Primary">
+        <nav
+          className={`flex items-center gap-[clamp(16px,2.4vw,36px)] ml-auto text-sm text-[#666d69] max-[1100px]:absolute max-[1100px]:top-full max-[1100px]:inset-x-0 max-[1100px]:m-0 max-[1100px]:flex-col max-[1100px]:items-stretch max-[1100px]:gap-0 max-[1100px]:bg-[#f8f8f8] max-[1100px]:px-5 max-[1100px]:pt-2 max-[1100px]:pb-5 max-[1100px]:border-b max-[1100px]:border-tf-line max-[1100px]:transition-[clip-path,opacity] max-[1100px]:duration-[450ms] max-[1100px]:ease-tf ${
+            open
+              ? "max-[1100px]:[clip-path:inset(0_0_0_0)] max-[1100px]:opacity-100 max-[1100px]:pointer-events-auto"
+              : "max-[1100px]:[clip-path:inset(0_0_100%_0)] max-[1100px]:opacity-0 max-[1100px]:pointer-events-none"
+          }`}
+          aria-label="Primary"
+        >
           {NAV.map((l) => (
-            <NavItem key={l.label} to={l.to} onClick={close}>{l.label}</NavItem>
+            <NavItem key={l.label} to={l.to} className={navLinkClass} onClick={close}>
+              {l.label}
+            </NavItem>
           ))}
-          <NavItem to="/appointments" className="nav__appt" onClick={close}>My appointments</NavItem>
-          <div className="nav__cta-mobile">
-            <AuthButton className="btn btn--ghost" onDone={close} />
-            <button className="btn btn--solid">Get Started</button>
+          <NavItem
+            to="/appointments"
+            className={`${navLinkClass} ml-[clamp(0px,3vw,48px)] max-[1100px]:ml-0`}
+            onClick={close}
+          >
+            My appointments
+          </NavItem>
+          <div className="hidden max-[1100px]:flex gap-2.5 pt-4">
+            <AuthButton className={`${btnGhost} flex-1`} onDone={close} />
+            <Link to="/book" className={`${btnSolid} flex-1`} onClick={close}>
+              Get Started
+            </Link>
           </div>
         </nav>
 
-        <div className="nav__cta">
-          <AuthButton className="btn btn--ghost btn--sm" />
-          <button className="btn btn--solid btn--sm">Get Started</button>
+        <div className="flex gap-2.5 max-[1100px]:hidden">
+          <AuthButton className={`${btnGhost} ${btnSm}`} />
+          <Link to="/book" className={`${btnSolid} ${btnSm}`}>
+            Get Started
+          </Link>
         </div>
 
         <button
-          className={`burger ${open ? "is-open" : ""}`}
+          className="hidden max-[1100px]:block w-[42px] h-[42px] border-0 bg-transparent ml-auto relative cursor-pointer"
           aria-label="Toggle menu"
           aria-expanded={open}
           onClick={() => setOpen((o) => !o)}
         >
-          <span /><span /><span />
+          <span
+            className={`absolute left-2.5 right-2.5 h-0.5 bg-[#222] rounded-sm transition-[transform,opacity] duration-[350ms] ease-tf top-[14px] ${
+              open ? "translate-y-1.5 rotate-45" : ""
+            }`}
+          />
+          <span
+            className={`absolute left-2.5 right-2.5 h-0.5 bg-[#222] rounded-sm transition-[transform,opacity] duration-[350ms] ease-tf top-5 ${
+              open ? "opacity-0" : ""
+            }`}
+          />
+          <span
+            className={`absolute left-2.5 right-2.5 h-0.5 bg-[#222] rounded-sm transition-[transform,opacity] duration-[350ms] ease-tf top-[26px] ${
+              open ? "-translate-y-1.5 -rotate-45" : ""
+            }`}
+          />
         </button>
       </div>
     </header>
@@ -163,44 +240,125 @@ export function Navbar() {
 
 export function Footer() {
   return (
-    <footer className="footer" id="contact">
-      <div className="container footer__grid">
-        <div className="footer__brand">
-          <Link to="/#top" className="brand brand--light">
-            <Photo src="/img/logo.png" className="brand__logo" fallback={<Logo />} />
-            <strong>THREEFOLD</strong>
+    <footer className="bg-tf-footer text-white pt-[72px]" id="contact">
+      <div
+        className={`${container} grid grid-cols-[1.4fr_1fr_1fr_1fr] gap-10 max-[900px]:grid-cols-2 max-[560px]:grid-cols-1`}
+      >
+        <div className="max-[900px]:col-span-full">
+          <Link to="/#top" className="flex items-center gap-2.5 font-serif no-underline">
+            {/* Icon only, so the name isn't duplicated */}
+            <Logo size={40} />
+            <strong className="text-sm tracking-[0.04em] font-normal text-tf-forest">THREEFOLD</strong>
           </Link>
-          <p>Bridging the gap between you and the mental clarity you deserve. Available anytime, anywhere.</p>
+          <p className="mt-5 font-serif text-[15px] leading-relaxed max-w-[280px] opacity-90 m-0">
+            Bridging the gap between you and the mental clarity you deserve. Available anytime, anywhere.
+          </p>
         </div>
         <div>
-          <h4>Services</h4>
-          <ul>
-            <li><Link to="/services#psychotherapy">Psychotherapy/Counseling</Link></li>
-            <li><Link to="/services#aba">ABA Therapy</Link></li>
-            <li><Link to="/services#assessment">Assessment Consultation</Link></li>
+          <h4 className="m-0 mb-4 text-tf-teal font-serif font-normal text-[22px]">Services</h4>
+          <ul className="list-none m-0 p-0">
+            <li className="font-serif text-base leading-[2.2]">
+              <Link
+                to="/services#psychotherapy"
+                className="opacity-90 transition-[opacity,color] duration-200 hover:opacity-100 hover:text-tf-teal no-underline text-inherit"
+              >
+                Psychotherapy/Counseling
+              </Link>
+            </li>
+            <li className="font-serif text-base leading-[2.2]">
+              <Link
+                to="/services#aba"
+                className="opacity-90 transition-[opacity,color] duration-200 hover:opacity-100 hover:text-tf-teal no-underline text-inherit"
+              >
+                ABA Therapy
+              </Link>
+            </li>
+            <li className="font-serif text-base leading-[2.2]">
+              <Link
+                to="/services#assessment"
+                className="opacity-90 transition-[opacity,color] duration-200 hover:opacity-100 hover:text-tf-teal no-underline text-inherit"
+              >
+                Assessment Consultation
+              </Link>
+            </li>
           </ul>
         </div>
         <div>
-          <h4>Threefold</h4>
-          <ul>
+          <h4 className="m-0 mb-4 text-tf-teal font-serif font-normal text-[22px]">Threefold</h4>
+          <ul className="list-none m-0 p-0">
             {NAV.map((l) => (
-              <li key={l.label}><NavItem to={l.to}>{l.label}</NavItem></li>
+              <li key={l.label} className="font-serif text-base leading-[2.2]">
+                <NavItem
+                  to={l.to}
+                  className="opacity-90 transition-[opacity,color] duration-200 hover:opacity-100 hover:text-tf-teal no-underline text-inherit"
+                >
+                  {l.label}
+                </NavItem>
+              </li>
             ))}
           </ul>
         </div>
         <div>
-          <h4>Support</h4>
-          <ul>
-            {["Help Center", "Book a Session", "Contact us", "Site map"].map((x) => (
-              <li key={x}><a href="#contact">{x}</a></li>
-            ))}
+          <h4 className="m-0 mb-4 text-tf-teal font-serif font-normal text-[22px]">Support</h4>
+          <ul className="list-none m-0 p-0">
+            <li className="font-serif text-base leading-[2.2]">
+              <Link
+                to="/book"
+                className="opacity-90 transition-[opacity,color] duration-200 hover:opacity-100 hover:text-tf-teal no-underline text-inherit"
+              >
+                Book a Session
+              </Link>
+            </li>
+            <li className="font-serif text-base leading-[2.2]">
+              <Link
+                to="/contact"
+                className="opacity-90 transition-[opacity,color] duration-200 hover:opacity-100 hover:text-tf-teal no-underline text-inherit"
+              >
+                Messages
+              </Link>
+            </li>
+            <li className="font-serif text-base leading-[2.2]">
+              <a
+                href={`mailto:${CLINIC.email}`}
+                className="opacity-90 transition-[opacity,color] duration-200 hover:opacity-100 hover:text-tf-teal no-underline text-inherit"
+              >
+                {CLINIC.email}
+              </a>
+            </li>
+            <li className="font-serif text-base leading-[2.2]">
+              <a
+                href={`tel:${CLINIC.phone.replace(/\s/g, "")}`}
+                className="opacity-90 transition-[opacity,color] duration-200 hover:opacity-100 hover:text-tf-teal no-underline text-inherit"
+              >
+                {CLINIC.phone}
+              </a>
+            </li>
           </ul>
+          <p className="m-0 mt-4 font-serif text-sm leading-relaxed opacity-80">{CLINIC.address}</p>
+          <a
+            href={CLINIC.facebook}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block mt-3 font-serif text-sm text-tf-teal no-underline hover:underline"
+          >
+            Facebook · {CLINIC.facebookLabel}
+          </a>
         </div>
       </div>
-      <div className="container footer__bar">
-        <p>© 2026 Threefold. All rights reserved. Made with 💚 for mental wellness.</p>
-        <p className="footer__legal">
-          <a href="#privacy">Privacy Policy</a><a href="#terms">Terms of Service</a><a href="#cookies">Cookie Policy</a>
+      <div
+        className={`${container} flex flex-wrap justify-between gap-3 mt-14 py-6 border-t border-white/12 font-serif text-xs`}
+      >
+        <p className="m-0">© 2026 Threefold. All rights reserved. Made with care for mental wellness.</p>
+        <p className="m-0 flex gap-6">
+          <a href="#privacy" className="no-underline text-inherit hover:text-tf-teal">
+            Privacy Policy
+          </a>
+          <a href="#terms" className="no-underline text-inherit hover:text-tf-teal">
+            Terms of Service
+          </a>
+          <a href="#cookies" className="no-underline text-inherit hover:text-tf-teal">
+            Cookie Policy
+          </a>
         </p>
       </div>
     </footer>

@@ -7,5 +7,5 @@ export const NAV = [
   { label: "About", to: "/#about" },
   { label: "Services", to: "/services" },
   { label: "Book Session", to: "/book" },
-  { label: "Contact", to: "Contact" },
+  { label: "Contact", to: "/contact" },
 ];

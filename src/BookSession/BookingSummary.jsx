@@ -1,6 +1,8 @@
+import { btnSolid } from "../components/Layout";
+
 export default function BookingSummary({
   step = 1,
-  totalSteps = 6,
+  totalSteps = 5, // matches StepRail: Service → Date & Time → Your Info → Review & Pay → Confirmed
   title = "Psychotherapy / Counseling",
   rows = [],
   fee = "₱1,500",
@@ -10,35 +12,52 @@ export default function BookingSummary({
   onContinue,
 }) {
   return (
-    <aside className="bs-summary" aria-labelledby="bs-summary-title">
-      <p className="bs-summary__eyebrow" id="bs-summary-title">YOUR BOOKING</p>
-      <p className="bs-summary__title">{title}</p>
-      <p className="bs-summary__status">
+    <aside
+      className="bg-white border border-black/[0.23] rounded-[21px] p-7 sticky top-[100px] max-[900px]:static"
+      aria-labelledby="bs-summary-title"
+    >
+      <p
+        className="m-0 mb-1.5 font-sans font-bold text-tf-teal text-xs tracking-[0.14em]"
+        id="bs-summary-title"
+      >
+        YOUR BOOKING
+      </p>
+      <p className="m-0 mb-1 font-serif text-base text-[#202020]">{title}</p>
+      <p className="m-0 mb-[18px] text-[#666] text-[0.72rem]">
         Step {step} of {totalSteps} · {status}
       </p>
 
-      <dl className="bs-summary__rows">
+      <dl className="border-y border-dashed border-[#d0e5dd] py-3.5 m-0 mb-3.5">
         {rows.map((r) => (
-          <div key={r.label} className="bs-summary__row">
-            <dt>{r.label}</dt>
-            <dd>{r.value || "To be set"}</dd>
+          <div
+            key={r.label}
+            className="flex justify-between items-baseline gap-3 py-[5px]"
+          >
+            <dt className="text-[#666] text-[0.78rem] tracking-[0.04em] m-0">
+              {r.label}
+            </dt>
+            <dd className="m-0 text-[#666] text-[0.85rem] font-bold text-right">
+              {r.value || "To be set"}
+            </dd>
           </div>
         ))}
       </dl>
 
-      <div className="bs-summary__total">
-        <span>Session fee</span>
-        <strong>{fee}</strong>
+      <div className="flex justify-between items-center mb-4">
+        <span className="text-[#666] text-[0.85rem]">Session fee</span>
+        <strong className="font-sans font-bold text-tf-teal text-[1.35rem]">
+          {fee}
+        </strong>
       </div>
 
-      {onContinue && (
+      {onContinue && ctaLabel && (
         <button
           type="button"
-          className="btn btn--solid bs-summary__cta"
+          className={`${btnSolid} w-full h-auto min-h-[41px] py-2.5 px-3.5 text-center whitespace-normal disabled:opacity-55 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none`}
           onClick={onContinue}
           disabled={ctaDisabled}
         >
-          {ctaLabel}
+          <span className="block leading-[1.3]">{ctaLabel}</span>
         </button>
       )}
     </aside>
