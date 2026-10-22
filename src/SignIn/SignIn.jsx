@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Navbar, Footer, Logo, btnSolid, btnGhost } from "../components/Layout";
+import { Navbar, Footer, Logo, Photo, btnSolid, btnGhost } from "../components/Layout";
 
 const DEMO_USER = "admin";
 const DEMO_PASS = "12345";
@@ -112,7 +112,12 @@ export default function SignIn() {
         <div className="relative z-10 mx-auto grid w-[min(1040px,calc(100%-40px))] grid-cols-2 gap-10 max-[900px]:grid-cols-1">
           <section className="flex flex-col justify-center max-[900px]:text-center">
             <div className="mb-6 flex items-center gap-3 max-[900px]:justify-center">
-              <Logo size={42} />
+              <Photo
+                src="/img/Threefold%20logo.png"
+                alt="Threefold logo"
+                className="h-[42px] w-[42px] shrink-0 object-contain"
+                fallback={<Logo size={42} />}
+              />
               <span>
                 <strong className="block font-serif text-sm tracking-[0.04em] text-tf-forest">
                   THREEFOLD

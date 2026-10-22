@@ -32,35 +32,148 @@ function Icon({ name, size = 64, className = "" }) {
   );
 }
 
-const LeafVine = ({ className = "" }) => (
-  <svg className={`pointer-events-none absolute z-0 ${className}`} viewBox="0 0 100 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M50 0 C50 50 10 100 10 150 C10 180 30 200 50 200" stroke="#2a6a53" strokeWidth="1.5" />
-    <path d="M30 40 Q50 30 60 50 Q40 60 30 40" fill="#2a6a53" opacity="0.8" />
-    <path d="M15 90 Q35 70 45 90 Q25 110 15 90" fill="#2a6a53" opacity="0.8" />
-    <path d="M20 140 Q40 130 50 150 Q30 160 20 140" fill="#2a6a53" opacity="0.8" />
-    <path d="M60 70 Q80 50 90 70 Q70 90 60 70" fill="#2a6a53" opacity="0.6" />
-    <path d="M40 180 Q60 170 70 190 Q50 200 40 180" fill="#2a6a53" opacity="0.6" />
+/* ---------- Background decorations (from the Figma export) ---------- */
+// base classes: behind content, never clickable, hidden on small screens
+const decoBase = "pointer-events-none absolute z-0 max-[900px]:hidden";
+
+const LEAF = "M0 0C6-11 20-11 28 0 20 11 6 11 0 0z";
+// [x, y, rotation, color, scale]
+const VINE_LEAVES = [
+  [40, 20, -35, "#2a6a53", 1.4],
+  [40, 45, 215, "#4a9b8e", 1.3],
+  [46, 80, -40, "#2a6a53", 1.5],
+  [48, 115, 200, "#aac6b7", 1.4],
+  [52, 140, -30, "#4a9b8e", 1.4],
+  [46, 175, 205, "#2a6a53", 1.5],
+  [40, 205, -45, "#6bbfaa", 1.3],
+  [38, 235, 215, "#2a6a53", 1.4],
+  [40, 265, -35, "#4a9b8e", 1.3],
+  [44, 290, -80, "#2a6a53", 1.1],
+];
+
+// Leafy vertical stem with leaves (left/right side vines)
+const Vine = ({ className = "", flip = false }) => (
+  <svg
+    className={`${decoBase} ${flip ? "-scale-x-100" : ""} ${className}`}
+    viewBox="0 0 100 300"
+    fill="none"
+    aria-hidden="true"
+  >
+    <path d="M40 0C38 70 56 130 42 190S34 260 44 300" stroke="#2a6a53" strokeWidth="1.5" strokeLinecap="round" />
+    {VINE_LEAVES.map(([x, y, r, c, s], idx) => (
+      <path key={idx} transform={`translate(${x} ${y}) rotate(${r}) scale(${s})`} d={LEAF} fill={c} opacity="0.9" />
+    ))}
   </svg>
 );
 
-const HeadIcon = ({ className = "" }) => (
-  <svg className={`pointer-events-none absolute z-0 ${className}`} viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M100 20 C130 20 160 50 160 90 C160 120 140 140 120 150 C110 155 100 170 90 170 C80 170 70 160 70 150 C70 140 80 130 90 130 C100 130 110 120 110 110 C110 100 100 90 90 90 C80 90 70 100 60 100 C50 100 40 90 40 80 C40 50 70 20 100 20 Z" stroke="#2a6a53" strokeWidth="1.5" />
-    <path d="M120 80 C130 80 140 90 140 100" stroke="#2a6a53" strokeWidth="1.5" strokeLinecap="round" />
-    <path d="M80 110 C85 115 90 120 100 120" stroke="#2a6a53" strokeWidth="1.5" strokeLinecap="round" />
-    <path d="M150 120 Q170 120 180 140 Q170 160 150 160" stroke="#2a6a53" strokeWidth="1.5" />
-    <path d="M160 130 Q175 130 185 140" stroke="#2a6a53" strokeWidth="1.5" />
+// Scattered teal dots with tiny plus marks
+const Dots = ({ className = "" }) => (
+  <svg className={`${decoBase} ${className}`} viewBox="0 0 60 60" fill="none" aria-hidden="true">
+    <circle cx="8" cy="8" r="2.2" fill="#4a9b8e" opacity="0.7" />
+    <circle cx="28" cy="5" r="1.6" fill="#4a9b8e" opacity="0.5" />
+    <circle cx="48" cy="12" r="2.6" fill="#4a9b8e" opacity="0.8" />
+    <circle cx="16" cy="28" r="2.8" fill="#4a9b8e" opacity="0.8" />
+    <circle cx="38" cy="30" r="1.8" fill="#4a9b8e" opacity="0.5" />
+    <circle cx="6" cy="48" r="1.6" fill="#4a9b8e" opacity="0.5" />
+    <circle cx="26" cy="50" r="2.2" fill="#4a9b8e" opacity="0.7" />
+    <circle cx="50" cy="46" r="1.6" fill="#4a9b8e" opacity="0.5" />
+    <path d="M42 22v6M39 25h6" stroke="#4a9b8e" strokeWidth="1" opacity="0.6" strokeLinecap="round" />
   </svg>
 );
 
-const FloatingDots = ({ className = "" }) => (
-  <svg className={`pointer-events-none absolute z-0 ${className}`} viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="10" cy="10" r="3" fill="#4a9b8e" opacity="0.6" />
-    <circle cx="25" cy="5" r="2" fill="#4a9b8e" opacity="0.4" />
-    <circle cx="5" cy="25" r="2" fill="#4a9b8e" opacity="0.4" />
-    <circle cx="40" cy="15" r="4" fill="#4a9b8e" opacity="0.7" />
-    <circle cx="20" cy="40" r="3" fill="#4a9b8e" opacity="0.5" />
-    <circle cx="45" cy="40" r="2" fill="#4a9b8e" opacity="0.6" />
+// Big soft pale green circle
+const PaleCircle = ({ className = "" }) => (
+  <svg className={`${decoBase} ${className}`} viewBox="0 0 100 100" aria-hidden="true">
+    <circle cx="50" cy="50" r="50" fill="#cfe4dc" opacity="0.55" />
+  </svg>
+);
+
+// Head profile with heart + leaf sprigs (top-right of Team)
+const HeadHeart = ({ className = "" }) => (
+  <svg className={`${decoBase} ${className}`} viewBox="0 0 260 260" fill="none" aria-hidden="true">
+    <path
+      d="M40 150C20 110 40 50 100 32c50-14 100 6 112 52 6 24-2 40-8 52l14 22-16 6 2 16-18 4c-2 22-16 34-34 36v26H88v-40c-20-10-36-24-48-56z"
+      fill="#e3efe9"
+      opacity="0.8"
+    />
+    <path
+      d="M52 150C34 112 50 62 104 46c46-12 90 6 100 48 5 22-2 36-8 48l12 20-14 5 2 14-16 4c-2 20-14 30-30 32v28"
+      stroke="#2a6a53"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+    />
+    <path
+      d="M112 118s-26-16-26-36a14 14 0 0 1 26-6 14 14 0 0 1 26 6c0 20-26 36-26 36z"
+      stroke="#2a6a53"
+      strokeWidth="1.6"
+      fill="#aac6b7"
+      fillOpacity="0.5"
+    />
+    <path d="M70 90c10-18 30-26 46-22M130 70c14 2 26 12 30 26" stroke="#2a6a53" strokeWidth="1.2" strokeLinecap="round" />
+    <path d="M20 250C40 210 60 190 90 176" stroke="#2a6a53" strokeWidth="1.4" strokeLinecap="round" />
+    {[
+      [32, 232, -50, "#7bb4ab"],
+      [48, 212, -20, "#aac6b7"],
+      [64, 196, -60, "#4a9b8e"],
+      [78, 184, -15, "#7bb4ab"],
+    ].map(([x, y, r, c], idx) => (
+      <path key={idx} transform={`translate(${x} ${y}) rotate(${r}) scale(1.2)`} d={LEAF} fill={c} opacity="0.85" />
+    ))}
+  </svg>
+);
+
+// Question speech-bubble with dashed ring (bottom-left of FAQ)
+const QuestionBubble = ({ className = "" }) => (
+  <svg className={`${decoBase} ${className}`} viewBox="0 0 200 320" fill="none" aria-hidden="true">
+    <circle cx="90" cy="90" r="70" stroke="#6bbfaa" strokeWidth="1" strokeDasharray="3 5" />
+    <rect x="44" y="58" width="92" height="58" rx="12" fill="#fff" stroke="#4a9b8e" strokeWidth="1.8" />
+    <path d="M62 116l-8 22 28-22" fill="#fff" stroke="#4a9b8e" strokeWidth="1.8" strokeLinejoin="round" />
+    <text x="90" y="100" textAnchor="middle" fontSize="38" fontWeight="700" fill="#4a9b8e" fontFamily="serif">?</text>
+    <circle cx="150" cy="140" r="12" fill="#cfe4dc" />
+    <circle cx="146" cy="140" r="1.8" fill="#4a9b8e" />
+    <circle cx="151" cy="140" r="1.8" fill="#4a9b8e" />
+    <circle cx="156" cy="140" r="1.8" fill="#4a9b8e" />
+    <circle cx="20" cy="30" r="2" fill="#4a9b8e" opacity="0.6" />
+    <circle cx="36" cy="22" r="1.5" fill="#4a9b8e" opacity="0.5" />
+    <circle cx="26" cy="46" r="1.5" fill="#4a9b8e" opacity="0.5" />
+    <path d="M90 320C84 270 100 220 88 170" stroke="#2a6a53" strokeWidth="1.5" strokeLinecap="round" />
+    {[
+      [90, 300, -40, "#2a6a53"],
+      [88, 270, 210, "#4a9b8e"],
+      [94, 240, -35, "#aac6b7"],
+      [92, 210, 205, "#2a6a53"],
+      [88, 186, -45, "#6bbfaa"],
+    ].map(([x, y, r, c], idx) => (
+      <path key={idx} transform={`translate(${x} ${y}) rotate(${r}) scale(1.3)`} d={LEAF} fill={c} opacity="0.9" />
+    ))}
+  </svg>
+);
+
+// Heart speech-bubble + check badge + dashed orbit (right of FAQ)
+const HeartBubble = ({ className = "" }) => (
+  <svg className={`${decoBase} ${className}`} viewBox="0 0 220 340" fill="none" aria-hidden="true">
+    <path d="M20 150C20 90 80 56 140 66s70 50 56 100" stroke="#6bbfaa" strokeWidth="1" strokeDasharray="3 5" />
+    <rect x="62" y="68" width="100" height="62" rx="12" fill="#fff" stroke="#4a9b8e" strokeWidth="1.8" />
+    <path d="M140 130l10 22-30-22" fill="#fff" stroke="#4a9b8e" strokeWidth="1.8" strokeLinejoin="round" />
+    <path
+      d="M112 112s-20-12-20-26a10 10 0 0 1 20-4 10 10 0 0 1 20 4c0 14-20 26-20 26z"
+      fill="#4a9b8e"
+    />
+    <circle cx="44" cy="52" r="12" fill="#fff" stroke="#4a9b8e" strokeWidth="1.5" />
+    <path d="M38 52l4 4 8-9" stroke="#4a9b8e" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="190" cy="54" r="2" fill="#4a9b8e" opacity="0.6" />
+    <circle cx="204" cy="68" r="1.5" fill="#4a9b8e" opacity="0.5" />
+    <path d="M150 340C156 290 134 240 150 190" stroke="#2a6a53" strokeWidth="1.5" strokeLinecap="round" />
+    {[
+      [150, 320, -140, "#2a6a53"],
+      [152, 292, -30, "#4a9b8e"],
+      [146, 262, -150, "#aac6b7"],
+      [150, 234, -35, "#2a6a53"],
+      [146, 208, -145, "#6bbfaa"],
+      [150, 190, -80, "#4a9b8e"],
+    ].map(([x, y, r, c], idx) => (
+      <path key={idx} transform={`translate(${x} ${y}) rotate(${r}) scale(1.3)`} d={LEAF} fill={c} opacity="0.9" />
+    ))}
   </svg>
 );
 
@@ -186,7 +299,9 @@ function HowItWorks() {
         <Photo src="/img/tree.png" className={treeImgClass} fallback={<HeroArt className={treeImgClass} />} />
       </div>
 
-      <LeafVine className="top-0 right-[-5%] w-[300px] h-[600px] -rotate-[15deg] opacity-80" />
+      {/* Decorations: dots at the bottom-left of the steps */}
+      <Dots className="bottom-[6%] left-[3%] w-16 h-16" />
+
       <div className={containerClass}>
         <Reveal>
           <SectionHead
@@ -219,7 +334,11 @@ function HowItWorks() {
 
 function Services() {
   return (
-    <section className={`${sectionClass} bg-white`} id="services">
+    <section className={`${sectionClass} bg-white overflow-hidden`} id="services">
+      {/* Decorations: dots (left of heading) + leafy stem (right of heading) */}
+      <Dots className="top-[5%] left-[6%] w-16 h-16" />
+      <Vine className="top-[2%] right-[2%] w-[110px] h-[330px]" />
+
       <div className={containerClass}>
         <Reveal>
           <SectionHead
@@ -275,9 +394,12 @@ function Team() {
   const [i, setI] = useState(0);
   const p = TEAM[i];
   return (
-    <section className={`${sectionClass} bg-tf-mint`} id="about">
-      <HeadIcon className="top-[10%] right-[5%] w-[250px] h-[250px] opacity-60" />
-      <FloatingDots className="bottom-[10%] left-[5%] w-20 h-20" />
+    <section className={`${sectionClass} bg-tf-mint overflow-hidden`} id="about">
+      {/* Decorations: head+heart (top-right), dots (left of avatar + bottom) */}
+      <HeadHeart className="top-[3%] right-[3%] w-[260px] h-[260px] opacity-80" />
+      <Dots className="top-[30%] left-[2.5%] w-14 h-14" />
+      <Dots className="bottom-[8%] left-[3%] w-14 h-14" />
+
       <div className={containerClass}>
         <Reveal>
           <h2 className="m-0 font-serif text-[clamp(32px,3.8vw,42px)] font-normal text-tf-ink">
@@ -307,11 +429,10 @@ function Team() {
                     type="button"
                     role="tab"
                     aria-selected={active}
-                    className={`flex items-center gap-3 py-3 pr-[26px] pl-4 rounded-[34px] border text-left cursor-pointer font-inherit transition-[background,color,border-color,transform] duration-300 ease-tf hover:-translate-y-0.5 max-[560px]:w-full ${
-                      active
-                        ? "bg-tf-teal border-tf-teal text-white"
-                        : "bg-white border-black/15 text-[#202020] hover:border-tf-teal"
-                    }`}
+                    className={`flex items-center gap-3 py-3 pr-[26px] pl-4 rounded-[34px] border text-left cursor-pointer font-inherit transition-[background,color,border-color,transform] duration-300 ease-tf hover:-translate-y-0.5 max-[560px]:w-full ${active
+                      ? "bg-tf-teal border-tf-teal text-white"
+                      : "bg-white border-black/15 text-[#202020] hover:border-tf-teal"
+                      }`}
                     onClick={() => setI(idx)}
                   >
                     <ChipAvatar />
@@ -358,7 +479,14 @@ function Stories() {
   const go = (d) => setI((x) => (x + d + STORIES.length) % STORIES.length);
   const s = STORIES[i];
   return (
-    <section className={`${sectionClass} bg-tf-mint`}>
+    <section className={`${sectionClass} bg-tf-mint overflow-hidden`}>
+      {/* Decorations: vines left/right, dots, pale green circle */}
+      <Vine className="bottom-[-4%] left-[1%] w-[110px] h-[330px]" />
+      <Vine flip className="top-[6%] right-[1.5%] w-[100px] h-[300px]" />
+      <Dots className="top-[8%] left-[4%] w-14 h-14" />
+      <Dots className="top-[30%] right-[10%] w-14 h-14" />
+      <PaleCircle className="bottom-[-6%] right-[6%] w-[200px] h-[200px]" />
+
       <div className={`${containerClass} max-w-[900px] text-center`}>
         <Reveal>
           <p className="m-0 text-[13px] font-bold tracking-[0.1em] text-tf-teal">STORIES</p>
@@ -411,9 +539,11 @@ function Stories() {
 function FAQ() {
   const [open, setOpen] = useState(0);
   return (
-    <section className={`${sectionClass} bg-white`} id="faq">
-      <LeafVine className="bottom-[-50px] left-[-20px] w-[200px] h-[400px] opacity-70" />
-      <LeafVine className="top-[10%] right-[-20px] w-[200px] h-[400px] -scale-x-100 -rotate-[20deg] opacity-70" />
+    <section className={`${sectionClass} bg-white overflow-hidden`} id="faq">
+      {/* Decorations: question bubble (left) + heart bubble (right) */}
+      <QuestionBubble className="bottom-[2%] left-[2%] w-[200px] h-[320px]" />
+      <HeartBubble className="bottom-[4%] right-[2%] w-[200px] h-[310px]" />
+
       <div className={`${containerClass} max-w-[820px]`}>
         <Reveal>
           <SectionHead align="center" eyebrow="FAQ" title="Frequently asked questions" />
@@ -424,9 +554,8 @@ function FAQ() {
             return (
               <div
                 key={f.q}
-                className={`rounded-xl bg-white border shadow-[0_4px_12px_-4px_rgba(0,0,0,0.03)] transition-[border-color,background] duration-300 ${
-                  isOpen ? "border-tf-teal" : "border-black/10"
-                }`}
+                className={`rounded-xl bg-white border shadow-[0_4px_12px_-4px_rgba(0,0,0,0.03)] transition-[border-color,background] duration-300 ${isOpen ? "border-tf-teal" : "border-black/10"
+                  }`}
               >
                 <button
                   type="button"
@@ -438,9 +567,8 @@ function FAQ() {
                   <span>{f.q}</span>
                   <i
                     aria-hidden="true"
-                    className={`shrink-0 w-9 h-9 rounded-full not-italic text-[22px] grid place-items-center transition-[transform,background,color] duration-[400ms] ease-tf ${
-                      isOpen ? "rotate-[135deg] bg-tf-teal text-white" : "bg-tf-soft text-tf-teal"
-                    }`}
+                    className={`shrink-0 w-9 h-9 rounded-full not-italic text-[22px] grid place-items-center transition-[transform,background,color] duration-[400ms] ease-tf ${isOpen ? "rotate-[135deg] bg-tf-teal text-white" : "bg-tf-soft text-tf-teal"
+                      }`}
                   >
                     +
                   </i>
@@ -448,9 +576,8 @@ function FAQ() {
                 <div
                   id={`faq-${idx}`}
                   role="region"
-                  className={`grid transition-[grid-template-rows] duration-[450ms] ease-tf ${
-                    isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                  }`}
+                  className={`grid transition-[grid-template-rows] duration-[450ms] ease-tf ${isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                    }`}
                 >
                   <div className="overflow-hidden">
                     <p className="m-0 px-6 pb-6 text-tf-body leading-[1.7] text-base">{f.a}</p>

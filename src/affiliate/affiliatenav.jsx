@@ -67,7 +67,7 @@ export default function AffiliateNavigation() {
             <div className="relative mt-[38px] px-[26px]">
                 <Link to="/" className="group flex items-center gap-[12px] no-underline" aria-label="Threefold Home">
                     <Photo
-                        src="/img/logo.png"
+                        src="/img/Threefold%20logo.png"
                         alt="Threefold Logo"
                         className="h-[42px] w-[42px] shrink-0 object-contain transition-transform group-hover:scale-105"
                         fallback={<Logo size={42} />}

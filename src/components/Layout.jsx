@@ -166,8 +166,11 @@ export function Navbar() {
           className="flex items-center gap-2.5 font-serif text-tf-forest no-underline"
           aria-label="Threefold home"
         >
-          {/* Icon only (circles). The text next to it is the original wordmark. */}
-          <Logo size={40} />
+          <Photo
+            src="/img/Threefold%20logo.png"
+            className="h-[42px] w-[42px] shrink-0 object-contain"
+            fallback={<Logo size={42} />}
+          />
           <span className="flex flex-col gap-0.5">
             <strong className="text-sm tracking-[0.04em] font-normal">THREEFOLD</strong>
             <small className="text-[7px] leading-[1.3] max-w-[190px] max-[560px]:hidden">
@@ -246,8 +249,12 @@ export function Footer() {
       >
         <div className="max-[900px]:col-span-full">
           <Link to="/#top" className="flex items-center gap-2.5 font-serif no-underline">
-            {/* Icon only, so the name isn't duplicated */}
-            <Logo size={40} />
+            <Photo
+              src="/img/Threefold%20logo.png"
+              alt="Threefold logo"
+              className="h-[40px] w-[40px] shrink-0 object-contain"
+              fallback={<Logo size={40} />}
+            />
             <strong className="text-sm tracking-[0.04em] font-normal text-tf-forest">THREEFOLD</strong>
           </Link>
           <p className="mt-5 font-serif text-[15px] leading-relaxed max-w-[280px] opacity-90 m-0">

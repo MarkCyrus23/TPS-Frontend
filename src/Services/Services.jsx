@@ -1,18 +1,161 @@
 import { Link } from "react-router-dom";
 import { Navbar, Footer, Reveal, Photo, container, btnSolid } from "../components/Layout";
 
-/* Where "Book now" goes. Matches Home's current booking anchor; point it at your real booking route later. */
+/* Where "Book now" goes. */
 const BOOK_TO = "/book";
 
-/* ---------- Content (edit here, not in the markup) ---------- */
+/* ---------- Original illustrations (inline SVG, one per service) ---------- */
+const INK = "#2c4a4f";
+
+/* Psychotherapy: a head with a plant growing inside, plus talking/caring bubbles */
+function PsychotherapyArt({ className }) {
+  return (
+    <svg viewBox="0 0 500 440" className={className} role="img" aria-label="Illustration of a head with a plant growing inside it">
+      <defs>
+        <linearGradient id="gradPsy" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#b9d4c7" />
+          <stop offset="1" stopColor="#8fb5a3" />
+        </linearGradient>
+      </defs>
+      <path d="M52 205C30 100 140 22 262 38c108 14 215-12 226 112 10 118-58 205-172 246-118 42-232-36-264-191Z" fill="url(#gradPsy)" />
+      <g stroke={INK} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round">
+        {/* head profile */}
+        <path d="M170 335V300C140 280 130 240 140 200 150 140 200 100 260 105c60 5 95 45 92 95v15l20 30c2 5-2 9-10 9h-10v26c0 20-17 30-37 30h-15v10z" fill="#f6e7c8" />
+        {/* shoulders */}
+        <path d="M110 372c10-28 50-40 90-40h100c40 0 70 12 82 40z" fill="#4a9b8e" />
+        {/* soil + plant */}
+        <ellipse cx="240" cy="272" rx="30" ry="8" fill="#c98a55" />
+        <path d="M240 266C238 230 244 200 240 165" fill="none" strokeWidth="4" />
+        <path d="M240 205C215 205 205 185 210 168 232 168 242 184 240 205z" fill="#10a28c" />
+        <path d="M242 190C265 190 278 170 272 153 250 153 240 171 242 190z" fill="#6fbfa8" />
+        <path d="M240 168C228 155 232 140 240 130 250 140 250 156 240 168z" fill="#10a28c" />
+        {/* eye + smile */}
+        <path d="M318 196q8 -6 16 0" fill="none" />
+        <path d="M340 270q-8 8 -18 4" fill="none" />
+        {/* bubble: talking */}
+        <rect x="68" y="86" width="96" height="58" rx="20" fill="#fff" />
+        <path d="M110 144l-8 20 26-20z" fill="#fff" />
+        <circle cx="94" cy="115" r="5" fill={INK} stroke="none" />
+        <circle cx="116" cy="115" r="5" fill={INK} stroke="none" />
+        <circle cx="138" cy="115" r="5" fill={INK} stroke="none" />
+        {/* bubble: care */}
+        <rect x="372" y="84" width="66" height="62" rx="20" fill="#fff" />
+        <path d="M400 146l12 18 6-18z" fill="#fff" />
+        <path d="M405 130C385 116 383 98 396 95c6-1 9 4 9 7 0-3 3-8 9-7 13 3 11 21-9 35z" fill="#e58f6f" />
+      </g>
+      <circle cx="78" cy="250" r="5" fill="#fff" opacity=".7" />
+      <circle cx="96" cy="276" r="3" fill="#fff" opacity=".7" />
+      <circle cx="430" cy="230" r="4" fill="#fff" opacity=".7" />
+    </svg>
+  );
+}
+
+/* ABA Therapy: lettered blocks that climb like steps toward a star, with a child reaching up */
+function AbaArt({ className }) {
+  return (
+    <svg viewBox="0 0 500 440" className={className} role="img" aria-label="Illustration of a child climbing lettered block steps toward a star">
+      <defs>
+        <linearGradient id="gradAba" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#b9d4c7" />
+          <stop offset="1" stopColor="#8fb5a3" />
+        </linearGradient>
+      </defs>
+      <path d="M70 160C90 70 210 30 300 52c90 22 170 70 176 160 6 90-60 170-160 190-100 20-210-10-244-110-8-24-8-60-2-92z" fill="url(#gradAba)" />
+      <ellipse cx="270" cy="376" rx="190" ry="12" fill="#4a9b8e" opacity=".75" />
+      <path d="M150 215C200 120 290 100 326 118" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeDasharray="1 11" />
+      <g stroke={INK} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round">
+        {/* block steps */}
+        <rect x="180" y="320" width="70" height="52" rx="8" fill="#e58f6f" />
+        <rect x="250" y="270" width="70" height="102" rx="8" fill="#f0c24f" />
+        <rect x="320" y="220" width="70" height="152" rx="8" fill="#6fbfa8" />
+        <rect x="390" y="170" width="60" height="202" rx="8" fill="#4a9b8e" />
+        <g stroke="none" fill={INK} fontFamily="Georgia, serif" fontWeight="700" fontSize="30" textAnchor="middle">
+          <text x="215" y="358">A</text>
+          <text x="285" y="334">B</text>
+          <text x="355" y="304">C</text>
+        </g>
+        {/* star */}
+        <polygon points="420,112 426,127 443,128 430,138 434,154 420,145 406,154 410,138 397,128 414,127" fill="#f0c24f" />
+        {/* child */}
+        <rect x="117" y="324" width="12" height="30" rx="4" fill="#3f4f86" />
+        <rect x="134" y="324" width="12" height="30" rx="4" fill="#3f4f86" />
+        <ellipse cx="123" cy="358" rx="12" ry="6" fill={INK} />
+        <ellipse cx="141" cy="358" rx="12" ry="6" fill={INK} />
+        <path d="M112 330c-4-30 0-52 18-52s22 22 18 52z" fill="#e58f6f" />
+        <path d="M146 292l36-30" strokeWidth="10" stroke="#e58f6f" fill="none" />
+        <path d="M146 292l36-30" strokeWidth="3" fill="none" />
+        <circle cx="130" cy="256" r="18" fill="#e8b48f" />
+        <path d="M112 252c-2-16 8-24 20-24s20 8 18 22c-8-8-24-10-38 2z" fill="#4a2f25" />
+        <path d="M123 264q7 6 14 0" fill="none" />
+        {/* ball + balloon */}
+        <circle cx="88" cy="352" r="14" fill="#f0c24f" />
+        <path d="M80 346q8 8 16 0" fill="none" strokeWidth="2" />
+        <circle cx="96" cy="120" r="24" fill="#e58f6f" />
+        <path d="M96 144c-4 20 8 34 -2 56" fill="none" strokeWidth="2" />
+      </g>
+      <circle cx="170" cy="150" r="4" fill="#fff" opacity=".8" />
+      <circle cx="300" cy="90" r="3" fill="#fff" opacity=".8" />
+    </svg>
+  );
+}
+
+/* Assessment & Consultation: clipboard checklist under a magnifying glass */
+function AssessmentArt({ className }) {
+  return (
+    <svg viewBox="0 0 500 440" className={className} role="img" aria-label="Illustration of a clipboard checklist with a magnifying glass">
+      <defs>
+        <linearGradient id="gradAsm" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#b9d4c7" />
+          <stop offset="1" stopColor="#8fb5a3" />
+        </linearGradient>
+      </defs>
+      <path d="M44 240C20 140 100 50 220 40c110-9 232 20 252 130 20 108-40 200-150 226C210 422 70 350 44 240z" fill="url(#gradAsm)" />
+      <g stroke={INK} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round">
+        {/* clipboard */}
+        <rect x="150" y="80" width="190" height="262" rx="16" fill="#fbf6e9" />
+        <rect x="215" y="64" width="60" height="30" rx="9" fill="#4a9b8e" />
+        {[130, 175, 220, 265].map((y, i) => (
+          <g key={y}>
+            <rect x="174" y={y} width="24" height="24" rx="6" fill="#fff" />
+            {i < 3 && <path d={`M179 ${y + 12}l6 6 9-12`} fill="none" stroke="#10a28c" strokeWidth="4" />}
+            <rect x="214" y={y + 8} width={[104, 86, 96, 70][i]} height="9" rx="4.5" fill="#b9d4c7" stroke="none" />
+          </g>
+        ))}
+        {/* question bubble */}
+        <circle cx="108" cy="130" r="26" fill="#fff" />
+        <path d="M96 150l-10 18 24-10z" fill="#fff" />
+        <text x="108" y="141" stroke="none" fill="#10a28c" fontFamily="Georgia, serif" fontWeight="700" fontSize="32" textAnchor="middle">?</text>
+        {/* puzzle piece */}
+        <g fill="#f0c24f">
+          <rect x="80" y="276" width="52" height="52" rx="6" />
+          <circle cx="106" cy="272" r="10" />
+          <circle cx="136" cy="302" r="10" />
+        </g>
+        {/* magnifier */}
+        <path d="M382 306l44 44" strokeWidth="16" stroke={INK} fill="none" />
+        <path d="M382 306l44 44" strokeWidth="10" stroke="#c98a55" fill="none" />
+        <circle cx="345" cy="270" r="50" fill="#fff" fillOpacity=".7" strokeWidth="6" />
+        <rect x="320" y="270" width="14" height="30" rx="3" fill="#10a28c" strokeWidth="2" />
+        <rect x="340" y="252" width="14" height="48" rx="3" fill="#f0c24f" strokeWidth="2" />
+        <rect x="360" y="280" width="14" height="20" rx="3" fill="#e58f6f" strokeWidth="2" />
+      </g>
+      <circle cx="430" cy="110" r="4" fill="#fff" opacity=".8" />
+      <circle cx="70" cy="200" r="3" fill="#fff" opacity=".8" />
+    </svg>
+  );
+}
+
+/* ---------- Content (edit here, not in the markup) ----------
+   Each service has its own original illustration (see the *Art components above). */
 const SERVICES = [
   {
     id: "psychotherapy",
     name: "Psychotherapy / Counseling",
     title: "Psychotherapy / Counseling",
     hours: 1,
-    label: "1-hour session",
+    label: "1 · HOUR SESSION",
     meta: "Online or in-person",
+    Art: PsychotherapyArt,
     text: "Individual talk therapy designed to build self-awareness, explore complex emotions, and develop healthy, lasting ways of coping with daily life.",
     goodFor: ["Anxiety", "Low mood", "Stress & burnout", "Relationships", "Grief"],
     steps: [
@@ -26,8 +169,9 @@ const SERVICES = [
     name: "ABA Therapy",
     title: "ABA Therapy",
     hours: 2,
-    label: "2-hour session",
+    label: "2 · HOUR SESSION",
     meta: "Intensive · For children · Parents involved",
+    Art: AbaArt,
     text: "Structured, play-based sessions using Applied Behavior Analysis. We focus on building skills step by step with positive reinforcement in a warm, encouraging space.",
     goodFor: ["Autism", "Developmental delays", "Communication", "Social skills", "Daily routines"],
     steps: [
@@ -41,8 +185,9 @@ const SERVICES = [
     name: "Assessment & Consultation",
     title: "Assessment & Consultation",
     hours: 1,
-    label: "1-hour session",
+    label: "1 · HOUR SESSION",
     meta: "Comprehensive review · Adults & children",
+    Art: AssessmentArt,
     text: "A thorough review and structured interview that gives you a clear picture of what's going on, along with recommendations tailored to you or your child.",
     goodFor: ["Not sure where to start", "Seeking clarity", "Learning concerns", "Behavior concerns", "Next-step guidance"],
     steps: [
@@ -70,6 +215,64 @@ const Arrow = ({ dir = "right" }) => (
     <path d="M2 7h10M8 3l4 4-4 4" />
   </svg>
 );
+
+/* Small leaf used as the bullet in "What happens" */
+const LeafBullet = () => (
+  <svg
+    width="12"
+    height="12"
+    viewBox="0 0 12 12"
+    aria-hidden="true"
+    className="absolute left-0 top-[5px] shrink-0"
+  >
+    <path d="M1 11C1 5 4 1 11 1c0 6-3 10-10 10Z" fill="#10a28c" />
+  </svg>
+);
+
+/* Wrapper for the illustration */
+function Blob({ Art }) {
+  return (
+    <div className="w-full max-w-[520px] mx-auto">
+      <Art className="w-full h-auto" />
+    </div>
+  );
+}
+
+/* Decorative leafy vine that sits at the page edge next to a service */
+const LEAVES = [
+  { x: 34, y: 40, r: -50, c: "#2f5f4f" },
+  { x: 54, y: 70, r: 25, c: "#a8cdbc" },
+  { x: 34, y: 100, r: -145, c: "#2f5f4f" },
+  { x: 54, y: 132, r: 20, c: "#10a28c" },
+  { x: 32, y: 165, r: -150, c: "#2f5f4f" },
+  { x: 56, y: 195, r: 30, c: "#a8cdbc" },
+  { x: 32, y: 228, r: -150, c: "#10a28c" },
+  { x: 54, y: 258, r: 28, c: "#2f5f4f" },
+  { x: 38, y: 290, r: -35, c: "#10a28c" },
+];
+
+function Vine({ side }) {
+  return (
+    <svg
+      viewBox="0 0 90 330"
+      aria-hidden="true"
+      className={`absolute bottom-[8%] w-[56px] h-auto pointer-events-none max-[1180px]:hidden ${side === "left" ? "-left-[72px]" : "-right-[72px] -scale-x-100"
+        }`}
+    >
+      <path d="M44 326C34 250 50 140 46 12" fill="none" stroke="#2f5f4f" strokeWidth="2" strokeLinecap="round" />
+      {LEAVES.map((l, i) => (
+        <path
+          key={i}
+          d="M0 0C6-14 22-16 30 0 22 14 6 14 0 0Z"
+          fill={l.c}
+          transform={`translate(${l.x} ${l.y}) rotate(${l.r})`}
+        />
+      ))}
+      <circle cx="12" cy="236" r="2.5" fill="#10a28c" />
+      <circle cx="-6" cy="262" r="1.8" fill="#a8cdbc" />
+    </svg>
+  );
+}
 
 function Glance() {
   return (
@@ -110,78 +313,98 @@ function Glance() {
   );
 }
 
-function Service({ s }) {
+function Service({ s, index }) {
+  const reversed = index % 2 === 1; // ABA: illustration left, text right
+
   return (
-    <Reveal className="border-t border-tf-line first:border-t-0">
+    <Reveal className="relative">
+      {/* thin fading divider between services */}
+      {index > 0 && (
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-[#9fcfc2] to-transparent" />
+      )}
+
       <section
-        className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] max-[900px]:grid-cols-1 gap-[clamp(28px,5vw,80px)] items-start py-[clamp(44px,6vw,80px)]"
+        className="relative grid grid-cols-2 max-[900px]:grid-cols-1 gap-[clamp(28px,5vw,80px)] items-center py-[clamp(44px,6vw,80px)]"
         id={s.id}
         aria-labelledby={`${s.id}-title`}
       >
-        <div>
-          <div className="flex items-center gap-4">
+        <Vine side={reversed ? "right" : "left"} />
+
+        {/* Text */}
+        <div className={reversed ? "min-[901px]:order-2 min-[901px]:pl-[clamp(0px,3vw,48px)]" : ""}>
+          <div className="flex items-center gap-3.5">
             <span
-              className="shrink-0 grid content-center justify-items-center w-[66px] h-[66px] rounded-full border-4 border-[#10a28c] font-serif leading-none"
+              className="shrink-0 grid content-center justify-items-center w-[52px] h-[52px] rounded-full border-[3px] border-[#10a28c] bg-white font-serif leading-none"
               aria-hidden="true"
             >
-              <b className="text-[22px] font-normal">{s.hours}</b>
-              <i className="text-[11px] not-italic mt-0.5">hr</i>
+              <b className="text-[17px] font-normal">{s.hours}</b>
+              <i className="text-[9px] not-italic mt-0.5">hr</i>
             </span>
             <p className="m-0 grid gap-[3px] font-serif">
-              <span className="text-sm text-[#10a28c]">{s.label}</span>
-              <small className="text-[11px] text-[#666]">{s.meta}</small>
+              <span className="text-[11px] tracking-[0.08em] text-[#10a28c]">{s.label}</span>
+              <small className="text-[11px] text-[#777]">{s.meta}</small>
             </p>
           </div>
+
           <h2
             id={`${s.id}-title`}
-            className="m-0 mt-[22px] mb-3.5 font-serif font-bold text-tf-ink text-[clamp(28px,3.6vw,40px)] leading-[1.12]"
+            className="m-0 mt-5 mb-3 font-serif font-bold text-[#2c4a4f] text-[clamp(26px,3.2vw,36px)] leading-[1.15] max-w-[16ch]"
           >
             {s.title}
           </h2>
-          <p className="m-0 font-serif text-[clamp(17px,2vw,20px)] leading-[1.55] text-[#666] max-w-[52ch]">
+
+          <p className="m-0 font-serif text-[clamp(15px,1.6vw,17px)] leading-[1.6] text-[#777] max-w-[46ch]">
             {s.text}
           </p>
-          <div className="flex items-center flex-wrap gap-[22px] mt-7">
-            <Link to={BOOK_TO} className={`${btnSolid} no-underline max-[560px]:flex-1 max-[560px]:min-w-[140px]`}>
-              Book now
-            </Link>
-            <Link
-              to="/#contact"
-              className="font-serif text-[15px] text-tf-ink border-b border-transparent no-underline transition-[border-color,color] duration-250 hover:border-current"
-            >
-              Ask a question
-            </Link>
-          </div>
-        </div>
 
-        <div className="bg-white rounded-xl p-[clamp(22px,3vw,32px)]">
-          <h3 className="m-0 mb-3 font-serif font-normal text-[13px] tracking-[0.12em] uppercase text-[#666]">
+          <h3 className="m-0 mt-6 mb-2.5 font-serif font-normal text-[11px] tracking-[0.14em] uppercase text-[#777]">
             Good for
           </h3>
-          <ul className="flex flex-wrap gap-2.5 m-0 mb-[30px] p-0 list-none">
+          <ul className="flex flex-wrap gap-2 m-0 p-0 list-none">
             {s.goodFor.map((t) => (
               <li
                 key={t}
-                className="font-serif font-bold text-xs text-[rgba(26,35,50,0.7)] bg-[rgba(74,155,142,0.15)] py-1.5 px-4 rounded-xl"
+                className="font-serif text-[11px] text-[#2c4a4f]/80 bg-[#a9cbbd] py-1 px-3.5 rounded-full"
               >
                 {t}
               </li>
             ))}
           </ul>
 
-          <h3 className="m-0 mb-3 font-serif font-normal text-[13px] tracking-[0.12em] uppercase text-[#666]">
+          <h3 className="m-0 mt-6 mb-3 font-serif font-normal text-[11px] tracking-[0.14em] uppercase text-[#777]">
             What happens
           </h3>
-          <ol className="relative m-0 p-0 pl-[22px] list-none grid gap-[18px] before:content-[''] before:absolute before:left-1 before:top-2 before:bottom-2 before:w-px before:bg-[rgba(74,155,142,0.45)]">
+          <ol className="m-0 p-0 list-none grid gap-3.5 max-w-[44ch]">
             {s.steps.map((t) => (
               <li
                 key={t}
-                className="relative font-serif text-[15px] leading-normal text-[#666] before:content-[''] before:absolute before:-left-[22px] before:top-1.5 before:w-[9px] before:h-[9px] before:rounded-full before:bg-tf-teal"
+                className="relative pl-[20px] font-serif text-[14px] leading-normal text-[#777]"
               >
+                <LeafBullet />
                 {t}
               </li>
             ))}
           </ol>
+
+          <div className="flex items-center flex-wrap gap-[22px] mt-7">
+            <Link
+              to={BOOK_TO}
+              className={`${btnSolid} no-underline max-[560px]:flex-1 max-[560px]:min-w-[140px]`}
+            >
+              Book now
+            </Link>
+            <Link
+              to="/#contact"
+              className="font-serif text-[14px] text-tf-ink border-b border-transparent no-underline transition-[border-color,color] duration-250 hover:border-current"
+            >
+              Ask a question
+            </Link>
+          </div>
+        </div>
+
+        {/* Illustration */}
+        <div className={reversed ? "min-[901px]:order-1" : ""}>
+          <Blob Art={s.Art} />
         </div>
       </section>
     </Reveal>
@@ -195,7 +418,6 @@ export default function Services() {
       <Navbar />
       <main>
         <header className="relative isolate overflow-hidden py-[clamp(48px,7vw,96px)]">
-          {/* Optional: export the tree art from Figma as ONE png to /public/img/tree.png */}
           <Photo
             src="/img/tree.png"
             className="absolute -right-[4%] -bottom-[6%] w-[min(46vw,560px)] opacity-[0.22] -z-10 pointer-events-none max-[900px]:w-[90vw] max-[900px]:-right-[20%] max-[900px]:opacity-[0.14]"
@@ -226,8 +448,8 @@ export default function Services() {
         </header>
 
         <div className={`${container} pb-[clamp(40px,6vw,80px)]`}>
-          {SERVICES.map((s) => (
-            <Service key={s.id} s={s} />
+          {SERVICES.map((s, i) => (
+            <Service key={s.id} s={s} index={i} />
           ))}
         </div>
       </main>

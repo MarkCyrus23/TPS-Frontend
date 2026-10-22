@@ -1,6 +1,6 @@
 import React from "react";
 import AffiliateNavigation from "./affiliatenav";
-import { Logo } from "../components/Layout";
+import { Logo, Photo } from "../components/Layout";
 
 const FONT_CSS = `@import url('https://fonts.googleapis.com/css2?family=Inknut+Antiqua:wght@600&family=Inria+Serif:wght@400;700&family=Inter:wght@400;600;700&display=swap');`;
 
@@ -370,7 +370,7 @@ const Today = () => (
         {/* In session banner */}
         <div className="absolute left-[20px] right-[21px] top-[58px] flex h-[44px] items-center rounded-[11px] bg-[#2f4a42] px-[8px]">
             <span className="flex h-[21px] w-[24px] items-center justify-center rounded-[6px] bg-white/10">
-                <Logo className="h-[16px] w-[17px]" />
+                <Photo src="/img/Threefold%20logo.png" className="h-[16px] w-[17px] object-contain" fallback={<Logo size={16} />} />
             </span>
             <div className="ml-[17px] flex-1">
                 <div className={`${serif} text-[11px] text-[#f2f2f2]`}>In Session now</div>
@@ -395,7 +395,7 @@ const Today = () => (
                         <div className="relative -mt-[4px] mr-[15px] flex w-[20px] shrink-0 flex-col items-center">
                             <span className="flex h-[19px] w-[20px] items-center justify-center rounded-full bg-[#d7eee8]">
                                 <span className="flex h-[14px] w-[14px] items-center justify-center rounded-full bg-[#32ac97]">
-                                    <Logo className="h-[9px] w-[9px]" />
+                                    <Photo src="/img/Threefold%20logo.png" className="h-[9px] w-[9px] object-contain" fallback={<Logo size={9} />} />
                                 </span>
                             </span>
                             {i < TIMELINE.length - 1 && (
@@ -408,7 +408,7 @@ const Today = () => (
                             }`}
                         >
                             <span className="absolute left-[8px] top-[15px] flex h-[23px] w-[28px] items-center justify-center rounded-[6px] border border-[#00000036] bg-white">
-                                <Logo className="h-[14px] w-[15px]" />
+                                <Photo src="/img/Threefold%20logo.png" className="h-[14px] w-[15px] object-contain" fallback={<Logo size={14} />} />
                             </span>
                             <div className={`${serif} absolute left-[43px] top-[16px] whitespace-nowrap text-[10px] font-bold text-[#666]`}>
                                 Psychotherapy · In-person
