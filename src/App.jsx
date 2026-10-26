@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-import Home from "./Home/Home";
+import Home from "./Client/ClientDashboard";
 import SignIn from "./SignIn/SignIn";
 import Services from "./Services/Services";
 import BookSession from "./BookSession/BookSession";
@@ -22,12 +22,17 @@ import AffiliateDashboard from "./affiliate/affiliatedashboard";
 import AffiliateAppointment from "./affiliate/affiliateappointment";
 import AffiliateSchedule from "./affiliate/affiliateschedule";
 import AffiliatePayment from "./affiliate/affiliatepayment";
+import Profile from "./pages/Profile";
 
-
-const ClientArea = ({ children }) => <RequireAuth roles={["CLIENT", "ADMIN"]}>{children}</RequireAuth>;
-const AdminOnly = ({ children }) => <RequireAuth roles={["ADMIN"]}>{children}</RequireAuth>;
-
-const AffiliateOnly = ({ children }) => <RequireAuth roles={["AFFILIATE", "ADMIN"]}>{children}</RequireAuth>;
+const ClientArea = ({ children }) => (
+  <RequireAuth roles={["CLIENT", "ADMIN"]}>{children}</RequireAuth>
+);
+const AdminOnly = ({ children }) => (
+  <RequireAuth roles={["ADMIN"]}>{children}</RequireAuth>
+);
+const AffiliateOnly = ({ children }) => (
+  <RequireAuth roles={["AFFILIATE", "ADMIN"]}>{children}</RequireAuth>
+);
 
 export default function App() {
   return (
@@ -36,7 +41,7 @@ export default function App() {
       <Route path="/services" element={<Services />} />
       <Route path="/signin" element={<SignIn />} />
 
-      {/* Booking Flow + My appointments: kailangang naka-sign in (CLIENT; pwede rin ang ADMIN para sa preview) */}
+      {/* Booking flow + My appointments (CLIENT, or ADMIN for preview) */}
       <Route path="/book" element={<ClientArea><BookSession /></ClientArea>} />
       <Route path="/book/date-time" element={<ClientArea><DateTime /></ClientArea>} />
       <Route path="/book/info" element={<ClientArea><UserInfo /></ClientArea>} />
@@ -46,7 +51,7 @@ export default function App() {
       <Route path="/book/confirmation" element={<ClientArea><Confirmation /></ClientArea>} />
       <Route path="/appointments" element={<ClientArea><MyAppointments /></ClientArea>} />
 
-      {/* Contact page (para sa naka-sign in) */}
+      {/* Contact page (signed-in users only). Path is case-insensitive in v6. */}
       <Route
         path="/contact"
         element={
@@ -55,11 +60,13 @@ export default function App() {
           </RequireAuth>
         }
       />
+
+      {/* Profile — all signed-in roles (CLIENT, AFFILIATE, ADMIN) */}
       <Route
-        path="/Contact"
+        path="/profile"
         element={
           <RequireAuth>
-            <Contact />
+            <Profile />
           </RequireAuth>
         }
       />

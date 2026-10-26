@@ -33,11 +33,9 @@ function Icon({ name, size = 64, className = "" }) {
 }
 
 /* ---------- Background decorations (from the Figma export) ---------- */
-// base classes: behind content, never clickable, hidden on small screens
 const decoBase = "pointer-events-none absolute z-0 max-[900px]:hidden";
 
 const LEAF = "M0 0C6-11 20-11 28 0 20 11 6 11 0 0z";
-// [x, y, rotation, color, scale]
 const VINE_LEAVES = [
   [40, 20, -35, "#2a6a53", 1.4],
   [40, 45, 215, "#4a9b8e", 1.3],
@@ -51,14 +49,8 @@ const VINE_LEAVES = [
   [44, 290, -80, "#2a6a53", 1.1],
 ];
 
-// Leafy vertical stem with leaves (left/right side vines)
 const Vine = ({ className = "", flip = false }) => (
-  <svg
-    className={`${decoBase} ${flip ? "-scale-x-100" : ""} ${className}`}
-    viewBox="0 0 100 300"
-    fill="none"
-    aria-hidden="true"
-  >
+  <svg className={`${decoBase} ${flip ? "-scale-x-100" : ""} ${className}`} viewBox="0 0 100 300" fill="none" aria-hidden="true">
     <path d="M40 0C38 70 56 130 42 190S34 260 44 300" stroke="#2a6a53" strokeWidth="1.5" strokeLinecap="round" />
     {VINE_LEAVES.map(([x, y, r, c, s], idx) => (
       <path key={idx} transform={`translate(${x} ${y}) rotate(${r}) scale(${s})`} d={LEAF} fill={c} opacity="0.9" />
@@ -66,7 +58,6 @@ const Vine = ({ className = "", flip = false }) => (
   </svg>
 );
 
-// Scattered teal dots with tiny plus marks
 const Dots = ({ className = "" }) => (
   <svg className={`${decoBase} ${className}`} viewBox="0 0 60 60" fill="none" aria-hidden="true">
     <circle cx="8" cy="8" r="2.2" fill="#4a9b8e" opacity="0.7" />
@@ -81,14 +72,12 @@ const Dots = ({ className = "" }) => (
   </svg>
 );
 
-// Big soft pale green circle
 const PaleCircle = ({ className = "" }) => (
   <svg className={`${decoBase} ${className}`} viewBox="0 0 100 100" aria-hidden="true">
     <circle cx="50" cy="50" r="50" fill="#cfe4dc" opacity="0.55" />
   </svg>
 );
 
-// Head profile with heart + leaf sprigs (top-right of Team)
 const HeadHeart = ({ className = "" }) => (
   <svg className={`${decoBase} ${className}`} viewBox="0 0 260 260" fill="none" aria-hidden="true">
     <path
@@ -122,7 +111,6 @@ const HeadHeart = ({ className = "" }) => (
   </svg>
 );
 
-// Question speech-bubble with dashed ring (bottom-left of FAQ)
 const QuestionBubble = ({ className = "" }) => (
   <svg className={`${decoBase} ${className}`} viewBox="0 0 200 320" fill="none" aria-hidden="true">
     <circle cx="90" cy="90" r="70" stroke="#6bbfaa" strokeWidth="1" strokeDasharray="3 5" />
@@ -149,7 +137,6 @@ const QuestionBubble = ({ className = "" }) => (
   </svg>
 );
 
-// Heart speech-bubble + check badge + dashed orbit (right of FAQ)
 const HeartBubble = ({ className = "" }) => (
   <svg className={`${decoBase} ${className}`} viewBox="0 0 220 340" fill="none" aria-hidden="true">
     <path d="M20 150C20 90 80 56 140 66s70 50 56 100" stroke="#6bbfaa" strokeWidth="1" strokeDasharray="3 5" />
@@ -299,7 +286,6 @@ function HowItWorks() {
         <Photo src="/img/tree.png" className={treeImgClass} fallback={<HeroArt className={treeImgClass} />} />
       </div>
 
-      {/* Decorations: dots at the bottom-left of the steps */}
       <Dots className="bottom-[6%] left-[3%] w-16 h-16" />
 
       <div className={containerClass}>
@@ -335,7 +321,6 @@ function HowItWorks() {
 function Services() {
   return (
     <section className={`${sectionClass} bg-white overflow-hidden`} id="services">
-      {/* Decorations: dots (left of heading) + leafy stem (right of heading) */}
       <Dots className="top-[5%] left-[6%] w-16 h-16" />
       <Vine className="top-[2%] right-[2%] w-[110px] h-[330px]" />
 
@@ -395,7 +380,6 @@ function Team() {
   const p = TEAM[i];
   return (
     <section className={`${sectionClass} bg-tf-mint overflow-hidden`} id="about">
-      {/* Decorations: head+heart (top-right), dots (left of avatar + bottom) */}
       <HeadHeart className="top-[3%] right-[3%] w-[260px] h-[260px] opacity-80" />
       <Dots className="top-[30%] left-[2.5%] w-14 h-14" />
       <Dots className="bottom-[8%] left-[3%] w-14 h-14" />
@@ -480,7 +464,6 @@ function Stories() {
   const s = STORIES[i];
   return (
     <section className={`${sectionClass} bg-tf-mint overflow-hidden`}>
-      {/* Decorations: vines left/right, dots, pale green circle */}
       <Vine className="bottom-[-4%] left-[1%] w-[110px] h-[330px]" />
       <Vine flip className="top-[6%] right-[1.5%] w-[100px] h-[300px]" />
       <Dots className="top-[8%] left-[4%] w-14 h-14" />
@@ -540,7 +523,6 @@ function FAQ() {
   const [open, setOpen] = useState(0);
   return (
     <section className={`${sectionClass} bg-white overflow-hidden`} id="faq">
-      {/* Decorations: question bubble (left) + heart bubble (right) */}
       <QuestionBubble className="bottom-[2%] left-[2%] w-[200px] h-[320px]" />
       <HeartBubble className="bottom-[4%] right-[2%] w-[200px] h-[310px]" />
 
@@ -597,7 +579,7 @@ const inquiryInput =
 
 function ContactInquiry() {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
-  const [status, setStatus] = useState(null); // null | success | error
+  const [status, setStatus] = useState(null);
   const [touched, setTouched] = useState(false);
 
   const set = (key) => (e) => {

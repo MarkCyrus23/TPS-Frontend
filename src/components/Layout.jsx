@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getClientNav } from "./clientnavigation";
 import { logout } from "../auth";
 import { CLINIC } from "../data/clinic";
+import ProfileMenu from "./ProfileMenu";
 
 /* ---------- Shared Tailwind helpers ---------- */
 export const container =
@@ -33,7 +34,6 @@ export function Logo({ size = 40 }) {
   );
 }
 
-/* Shows /public/img/<file> if it exists, otherwise the fallback */
 export function Photo({ src, fallback = null, className, alt = "" }) {
   const [ok, setOk] = useState(true);
   return ok ? (
@@ -44,7 +44,6 @@ export function Photo({ src, fallback = null, className, alt = "" }) {
 }
 
 /* ---------- Auth-aware navigation ---------- */
-// Kapag nag-sign out, ipapaalam sa Navbar/Footer para mag-update agad ang mga link
 const AUTH_EVENT = "tf-auth-change";
 
 function useClientNav() {
@@ -58,10 +57,9 @@ function useClientNav() {
       window.removeEventListener("storage", on);
     };
   }, []);
-  return getClientNav(); // { authed, nav, myAppointments, cta }
+  return getClientNav();
 }
 
-/* Sign In link, o Sign Out kapag naka-login na (totoong logout sa backend) */
 export function AuthButton({ className, onDone }) {
   const navigate = useNavigate();
   const { authed } = useClientNav();
@@ -128,11 +126,8 @@ export function SectionHead({ eyebrow, title, sub, align = "center" }) {
 }
 
 /* ---------- Navigation (works from any page) ---------- */
-// "#x"  -> same-page anchor.   "/..." -> router link (hash handled by ScrollToHash)
-
 function NavItem({ to, className, onClick, children }) {
   const { pathname } = useLocation();
-  // Normalize relative paths (e.g. navConfig "Contact" -> "/Contact") without editing navConfig
   const href = to.startsWith("#") || to.startsWith("/") ? to : `/${to}`;
   if (href.startsWith("#")) {
     return (
@@ -149,7 +144,6 @@ function NavItem({ to, className, onClick, children }) {
   );
 }
 
-/* Scrolls to #hash after a route change, or to top when there is none */
 function ScrollToHash() {
   const { pathname, hash } = useLocation();
   useEffect(() => {
@@ -166,7 +160,8 @@ function ScrollToHash() {
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { nav, myAppointments, cta } = useClientNav();
+  const { nav, myAppointments } = useClientNav(); // Kinukuha natin ang myAppointments
+
   useEffect(() => {
     const on = () => setScrolled(window.scrollY > 8);
     on();
@@ -182,6 +177,8 @@ export function Navbar() {
     >
       <ScrollToHash />
       <div className="w-[min(1360px,calc(100%-40px))] mx-auto h-[72px] flex items-center gap-6">
+        
+        {/* LOGO */}
         <Link
           to="/#top"
           className="flex items-center gap-2.5 font-serif text-tf-forest no-underline"
@@ -200,6 +197,7 @@ export function Navbar() {
           </span>
         </Link>
 
+        {/* NAVIGATION LINKS */}
         <nav
           className={`flex items-center gap-[clamp(16px,2.4vw,36px)] ml-auto text-sm text-[#666d69] max-[1100px]:absolute max-[1100px]:top-full max-[1100px]:inset-x-0 max-[1100px]:m-0 max-[1100px]:flex-col max-[1100px]:items-stretch max-[1100px]:gap-0 max-[1100px]:bg-[#f8f8f8] max-[1100px]:px-5 max-[1100px]:pt-2 max-[1100px]:pb-5 max-[1100px]:border-b max-[1100px]:border-tf-line max-[1100px]:transition-[clip-path,opacity] max-[1100px]:duration-[450ms] max-[1100px]:ease-tf ${open
               ? "max-[1100px]:[clip-path:inset(0_0_0_0)] max-[1100px]:opacity-100 max-[1100px]:pointer-events-auto"
@@ -212,6 +210,8 @@ export function Navbar() {
               {l.label}
             </NavItem>
           ))}
+
+          {/* ITO YUNG IBINALIK NATIN NA "MY APPOINTMENTS" */}
           {myAppointments && (
             <NavItem
               to={myAppointments.to}
@@ -221,21 +221,19 @@ export function Navbar() {
               {myAppointments.label}
             </NavItem>
           )}
-          <div className="hidden max-[1100px]:flex gap-2.5 pt-4">
-            <AuthButton className={`${btnGhost} flex-1`} onDone={close} />
-            <Link to={cta.to} className={`${btnSolid} flex-1`} onClick={close}>
-              {cta.label}
-            </Link>
+          
+          {/* MOBILE VIEW - Sign In / Profile Menu kapag maliit ang screen */}
+          <div className="hidden max-[1100px]:flex items-center justify-between gap-2.5 pt-4 border-t border-black/10 mt-2">
+            <ProfileMenu size={42} />
           </div>
         </nav>
 
-        <div className="flex gap-2.5 max-[1100px]:hidden">
-          <AuthButton className={`${btnGhost} ${btnSm}`} />
-          <Link to={cta.to} className={`${btnSolid} ${btnSm}`}>
-            {cta.label}
-          </Link>
+        {/* DESKTOP VIEW - Profile Menu na lang (Wala nang Get Started) */}
+        <div className="flex items-center gap-2.5 max-[1100px]:hidden">
+          <ProfileMenu size={38} />
         </div>
 
+        {/* MOBILE HAMBURGER MENU BUTTON */}
         <button
           className="hidden max-[1100px]:block w-[42px] h-[42px] border-0 bg-transparent ml-auto relative cursor-pointer"
           aria-label="Toggle menu"
@@ -329,7 +327,6 @@ export function Footer() {
         <div>
           <h4 className="m-0 mb-4 text-tf-teal font-serif font-normal text-[22px]">Support</h4>
           <ul className="list-none m-0 p-0">
-            {/* Book a Session at Messages: para sa naka-sign in lang */}
             {authed && (
               <>
                 <li className="font-serif text-base leading-[2.2]">

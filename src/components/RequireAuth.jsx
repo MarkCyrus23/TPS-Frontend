@@ -8,23 +8,25 @@ const ROLE_HOME = {
   CLIENT: "/appointments",
 };
 
-// roles (optional): listahan ng role na pwede sa page. Kapag wala, kahit sinong naka-login ay pwede.
+// roles (optional): listahan ng role na pwede sa page.
+// Kapag wala (undefined), kahit sinong naka-login ay pwede.
 export default function RequireAuth({ children, roles }) {
   const location = useLocation();
   const token = getToken();
   const user = getUser();
 
-  // Hindi naka-login
+  // Hindi naka-login → pumunta sa /signin, tandaan kung saan siya galing
   if (!token || !user) {
-    return <Navigate to="/signin" replace state={{ from: location.pathname }} />;
+    const from = location.pathname + location.search + location.hash;
+    return <Navigate to="/signin" replace state={{ from }} />;
   }
 
-  // Naka-login pero hindi para sa role niya ang page
-  if (roles && !roles.includes(user.role)) {
+  // Naka-login pero hindi para sa role niya ang page → sariling home
+  if (roles && roles.length > 0 && !roles.includes(user.role)) {
     return <Navigate to={ROLE_HOME[user.role] || "/"} replace />;
   }
 
-  // Admin na nagpi-preview ng client/affiliate site: may "Back to Admin" button sa kanang-ibaba
+  // Admin na nagpi-preview ng client/affiliate site
   const isPreview = user.role === "ADMIN" && !location.pathname.startsWith("/admin");
 
   return (
