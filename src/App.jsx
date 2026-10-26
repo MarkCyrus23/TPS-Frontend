@@ -23,6 +23,12 @@ import AffiliateAppointment from "./affiliate/affiliateappointment";
 import AffiliateSchedule from "./affiliate/affiliateschedule";
 import AffiliatePayment from "./affiliate/affiliatepayment";
 
+
+const ClientArea = ({ children }) => <RequireAuth roles={["CLIENT", "ADMIN"]}>{children}</RequireAuth>;
+const AdminOnly = ({ children }) => <RequireAuth roles={["ADMIN"]}>{children}</RequireAuth>;
+
+const AffiliateOnly = ({ children }) => <RequireAuth roles={["AFFILIATE", "ADMIN"]}>{children}</RequireAuth>;
+
 export default function App() {
   return (
     <Routes>
@@ -30,24 +36,17 @@ export default function App() {
       <Route path="/services" element={<Services />} />
       <Route path="/signin" element={<SignIn />} />
 
-      {/* Booking Flow */}
-      <Route path="/book" element={<BookSession />} />
-      <Route path="/book/date-time" element={<DateTime />} />
-      <Route path="/book/info" element={<UserInfo />} />
-      <Route path="/book/review" element={<ReviewAndPay />} />
-      <Route path="/book/approval" element={<Approval />} />
-      <Route path="/book/consent" element={<Consent />} />
-      <Route path="/book/confirmation" element={<Confirmation />} />
+      {/* Booking Flow + My appointments: kailangang naka-sign in (CLIENT; pwede rin ang ADMIN para sa preview) */}
+      <Route path="/book" element={<ClientArea><BookSession /></ClientArea>} />
+      <Route path="/book/date-time" element={<ClientArea><DateTime /></ClientArea>} />
+      <Route path="/book/info" element={<ClientArea><UserInfo /></ClientArea>} />
+      <Route path="/book/review" element={<ClientArea><ReviewAndPay /></ClientArea>} />
+      <Route path="/book/approval" element={<ClientArea><Approval /></ClientArea>} />
+      <Route path="/book/consent" element={<ClientArea><Consent /></ClientArea>} />
+      <Route path="/book/confirmation" element={<ClientArea><Confirmation /></ClientArea>} />
+      <Route path="/appointments" element={<ClientArea><MyAppointments /></ClientArea>} />
 
-      {/* Dashboard & Messages (auth required for demo) */}
-      <Route
-        path="/appointments"
-        element={
-          <RequireAuth>
-            <MyAppointments />
-          </RequireAuth>
-        }
-      />
+      {/* Contact page (para sa naka-sign in) */}
       <Route
         path="/contact"
         element={
@@ -66,18 +65,18 @@ export default function App() {
       />
 
       {/* ADMIN */}
-      <Route path="/admin" element={<AdminDashboard />} />
-      <Route path="/admin/appointment" element={<AdminAppointment />} />
-      <Route path="/admin/payment" element={<AdminPayment />} />
-      <Route path="/admin/backup" element={<AdminBackup />} />
-      <Route path="/admin/payment-method" element={<AdminPaymentMethod />} />
-      <Route path="/admin/schedule" element={<AdminSchedule />} />
+      <Route path="/admin" element={<AdminOnly><AdminDashboard /></AdminOnly>} />
+      <Route path="/admin/appointment" element={<AdminOnly><AdminAppointment /></AdminOnly>} />
+      <Route path="/admin/payment" element={<AdminOnly><AdminPayment /></AdminOnly>} />
+      <Route path="/admin/backup" element={<AdminOnly><AdminBackup /></AdminOnly>} />
+      <Route path="/admin/payment-method" element={<AdminOnly><AdminPaymentMethod /></AdminOnly>} />
+      <Route path="/admin/schedule" element={<AdminOnly><AdminSchedule /></AdminOnly>} />
 
       {/* AFFILIATE */}
-      <Route path="/affiliate" element={<AffiliateDashboard />} />
-      <Route path="/affiliate/appointment" element={<AffiliateAppointment />} />
-      <Route path="/affiliate/schedules" element={<AffiliateSchedule />} />
-      <Route path="/affiliate/payment" element={<AffiliatePayment />} />
+      <Route path="/affiliate" element={<AffiliateOnly><AffiliateDashboard /></AffiliateOnly>} />
+      <Route path="/affiliate/appointment" element={<AffiliateOnly><AffiliateAppointment /></AffiliateOnly>} />
+      <Route path="/affiliate/schedules" element={<AffiliateOnly><AffiliateSchedule /></AffiliateOnly>} />
+      <Route path="/affiliate/payment" element={<AffiliateOnly><AffiliatePayment /></AffiliateOnly>} />
     </Routes>
   );
 }

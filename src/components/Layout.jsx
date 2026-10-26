@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { NAV } from "./navConfig";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { getClientNav } from "./clientnavigation";
+import { logout } from "../auth";
 import { CLINIC } from "../data/clinic";
 
 /* ---------- Shared Tailwind helpers ---------- */
@@ -42,17 +43,38 @@ export function Photo({ src, fallback = null, className, alt = "" }) {
   );
 }
 
-/* Sign In link, or Sign Out once logged in (demo auth via sessionStorage) */
+/* ---------- Auth-aware navigation ---------- */
+// Kapag nag-sign out, ipapaalam sa Navbar/Footer para mag-update agad ang mga link
+const AUTH_EVENT = "tf-auth-change";
+
+function useClientNav() {
+  const [, bump] = useState(0);
+  useEffect(() => {
+    const on = () => bump((n) => n + 1);
+    window.addEventListener(AUTH_EVENT, on);
+    window.addEventListener("storage", on);
+    return () => {
+      window.removeEventListener(AUTH_EVENT, on);
+      window.removeEventListener("storage", on);
+    };
+  }, []);
+  return getClientNav(); // { authed, nav, myAppointments, cta }
+}
+
+/* Sign In link, o Sign Out kapag naka-login na (totoong logout sa backend) */
 export function AuthButton({ className, onDone }) {
-  const [authed, setAuthed] = useState(() => sessionStorage.getItem("tf_auth") === "1");
+  const navigate = useNavigate();
+  const { authed } = useClientNav();
+
   if (authed) {
     return (
       <button
         className={className}
-        onClick={() => {
-          sessionStorage.removeItem("tf_auth");
-          setAuthed(false);
+        onClick={async () => {
+          await logout();
+          window.dispatchEvent(new Event(AUTH_EVENT));
           onDone?.();
+          navigate("/", { replace: true });
         }}
       >
         Sign Out
@@ -93,9 +115,8 @@ export function Reveal({ children, delay = 0, className = "" }) {
 export function SectionHead({ eyebrow, title, sub, align = "center" }) {
   return (
     <header
-      className={`grid gap-3 ${
-        align === "center" ? "text-center justify-items-center" : "text-left justify-items-start"
-      }`}
+      className={`grid gap-3 ${align === "center" ? "text-center justify-items-center" : "text-left justify-items-start"
+        }`}
     >
       <p className="m-0 text-[13px] font-bold tracking-[0.1em] text-tf-teal">{eyebrow}</p>
       <h2 className="m-0 text-[clamp(28px,3.4vw,40px)] font-normal leading-[1.15]">{title}</h2>
@@ -145,6 +166,7 @@ function ScrollToHash() {
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { nav, myAppointments, cta } = useClientNav();
   useEffect(() => {
     const on = () => setScrolled(window.scrollY > 8);
     on();
@@ -155,9 +177,8 @@ export function Navbar() {
 
   return (
     <header
-      className={`sticky top-0 z-50 bg-[#f8f8f8] border-b border-tf-line transition-shadow duration-300 relative ${
-        scrolled ? "shadow-[0_6px_24px_-14px_rgba(0,0,0,0.35)]" : ""
-      }`}
+      className={`sticky top-0 z-50 bg-[#f8f8f8] border-b border-tf-line transition-shadow duration-300 relative ${scrolled ? "shadow-[0_6px_24px_-14px_rgba(0,0,0,0.35)]" : ""
+        }`}
     >
       <ScrollToHash />
       <div className="w-[min(1360px,calc(100%-40px))] mx-auto h-[72px] flex items-center gap-6">
@@ -180,37 +201,38 @@ export function Navbar() {
         </Link>
 
         <nav
-          className={`flex items-center gap-[clamp(16px,2.4vw,36px)] ml-auto text-sm text-[#666d69] max-[1100px]:absolute max-[1100px]:top-full max-[1100px]:inset-x-0 max-[1100px]:m-0 max-[1100px]:flex-col max-[1100px]:items-stretch max-[1100px]:gap-0 max-[1100px]:bg-[#f8f8f8] max-[1100px]:px-5 max-[1100px]:pt-2 max-[1100px]:pb-5 max-[1100px]:border-b max-[1100px]:border-tf-line max-[1100px]:transition-[clip-path,opacity] max-[1100px]:duration-[450ms] max-[1100px]:ease-tf ${
-            open
+          className={`flex items-center gap-[clamp(16px,2.4vw,36px)] ml-auto text-sm text-[#666d69] max-[1100px]:absolute max-[1100px]:top-full max-[1100px]:inset-x-0 max-[1100px]:m-0 max-[1100px]:flex-col max-[1100px]:items-stretch max-[1100px]:gap-0 max-[1100px]:bg-[#f8f8f8] max-[1100px]:px-5 max-[1100px]:pt-2 max-[1100px]:pb-5 max-[1100px]:border-b max-[1100px]:border-tf-line max-[1100px]:transition-[clip-path,opacity] max-[1100px]:duration-[450ms] max-[1100px]:ease-tf ${open
               ? "max-[1100px]:[clip-path:inset(0_0_0_0)] max-[1100px]:opacity-100 max-[1100px]:pointer-events-auto"
               : "max-[1100px]:[clip-path:inset(0_0_100%_0)] max-[1100px]:opacity-0 max-[1100px]:pointer-events-none"
-          }`}
+            }`}
           aria-label="Primary"
         >
-          {NAV.map((l) => (
+          {nav.map((l) => (
             <NavItem key={l.label} to={l.to} className={navLinkClass} onClick={close}>
               {l.label}
             </NavItem>
           ))}
-          <NavItem
-            to="/appointments"
-            className={`${navLinkClass} ml-[clamp(0px,3vw,48px)] max-[1100px]:ml-0`}
-            onClick={close}
-          >
-            My appointments
-          </NavItem>
+          {myAppointments && (
+            <NavItem
+              to={myAppointments.to}
+              className={`${navLinkClass} ml-[clamp(0px,3vw,48px)] max-[1100px]:ml-0`}
+              onClick={close}
+            >
+              {myAppointments.label}
+            </NavItem>
+          )}
           <div className="hidden max-[1100px]:flex gap-2.5 pt-4">
             <AuthButton className={`${btnGhost} flex-1`} onDone={close} />
-            <Link to="/book" className={`${btnSolid} flex-1`} onClick={close}>
-              Get Started
+            <Link to={cta.to} className={`${btnSolid} flex-1`} onClick={close}>
+              {cta.label}
             </Link>
           </div>
         </nav>
 
         <div className="flex gap-2.5 max-[1100px]:hidden">
           <AuthButton className={`${btnGhost} ${btnSm}`} />
-          <Link to="/book" className={`${btnSolid} ${btnSm}`}>
-            Get Started
+          <Link to={cta.to} className={`${btnSolid} ${btnSm}`}>
+            {cta.label}
           </Link>
         </div>
 
@@ -221,19 +243,16 @@ export function Navbar() {
           onClick={() => setOpen((o) => !o)}
         >
           <span
-            className={`absolute left-2.5 right-2.5 h-0.5 bg-[#222] rounded-sm transition-[transform,opacity] duration-[350ms] ease-tf top-[14px] ${
-              open ? "translate-y-1.5 rotate-45" : ""
-            }`}
+            className={`absolute left-2.5 right-2.5 h-0.5 bg-[#222] rounded-sm transition-[transform,opacity] duration-[350ms] ease-tf top-[14px] ${open ? "translate-y-1.5 rotate-45" : ""
+              }`}
           />
           <span
-            className={`absolute left-2.5 right-2.5 h-0.5 bg-[#222] rounded-sm transition-[transform,opacity] duration-[350ms] ease-tf top-5 ${
-              open ? "opacity-0" : ""
-            }`}
+            className={`absolute left-2.5 right-2.5 h-0.5 bg-[#222] rounded-sm transition-[transform,opacity] duration-[350ms] ease-tf top-5 ${open ? "opacity-0" : ""
+              }`}
           />
           <span
-            className={`absolute left-2.5 right-2.5 h-0.5 bg-[#222] rounded-sm transition-[transform,opacity] duration-[350ms] ease-tf top-[26px] ${
-              open ? "-translate-y-1.5 -rotate-45" : ""
-            }`}
+            className={`absolute left-2.5 right-2.5 h-0.5 bg-[#222] rounded-sm transition-[transform,opacity] duration-[350ms] ease-tf top-[26px] ${open ? "-translate-y-1.5 -rotate-45" : ""
+              }`}
           />
         </button>
       </div>
@@ -242,6 +261,8 @@ export function Navbar() {
 }
 
 export function Footer() {
+  const { nav, authed } = useClientNav();
+
   return (
     <footer className="bg-tf-footer text-white pt-[72px]" id="contact">
       <div
@@ -293,7 +314,7 @@ export function Footer() {
         <div>
           <h4 className="m-0 mb-4 text-tf-teal font-serif font-normal text-[22px]">Threefold</h4>
           <ul className="list-none m-0 p-0">
-            {NAV.map((l) => (
+            {nav.map((l) => (
               <li key={l.label} className="font-serif text-base leading-[2.2]">
                 <NavItem
                   to={l.to}
@@ -308,22 +329,27 @@ export function Footer() {
         <div>
           <h4 className="m-0 mb-4 text-tf-teal font-serif font-normal text-[22px]">Support</h4>
           <ul className="list-none m-0 p-0">
-            <li className="font-serif text-base leading-[2.2]">
-              <Link
-                to="/book"
-                className="opacity-90 transition-[opacity,color] duration-200 hover:opacity-100 hover:text-tf-teal no-underline text-inherit"
-              >
-                Book a Session
-              </Link>
-            </li>
-            <li className="font-serif text-base leading-[2.2]">
-              <Link
-                to="/contact"
-                className="opacity-90 transition-[opacity,color] duration-200 hover:opacity-100 hover:text-tf-teal no-underline text-inherit"
-              >
-                Messages
-              </Link>
-            </li>
+            {/* Book a Session at Messages: para sa naka-sign in lang */}
+            {authed && (
+              <>
+                <li className="font-serif text-base leading-[2.2]">
+                  <Link
+                    to="/book"
+                    className="opacity-90 transition-[opacity,color] duration-200 hover:opacity-100 hover:text-tf-teal no-underline text-inherit"
+                  >
+                    Book a Session
+                  </Link>
+                </li>
+                <li className="font-serif text-base leading-[2.2]">
+                  <Link
+                    to="/contact"
+                    className="opacity-90 transition-[opacity,color] duration-200 hover:opacity-100 hover:text-tf-teal no-underline text-inherit"
+                  >
+                    Messages
+                  </Link>
+                </li>
+              </>
+            )}
             <li className="font-serif text-base leading-[2.2]">
               <a
                 href={`mailto:${CLINIC.email}`}

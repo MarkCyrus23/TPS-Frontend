@@ -1,6 +1,7 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Logo, Photo } from "../components/Layout";
+import { logout } from "../auth";
 
 
 const ITEMS = [
@@ -59,64 +60,70 @@ const Icon = ({ name }) => {
 
 export default function AffiliateNavigation() {
     const { pathname } = useLocation();
+    const navigate = useNavigate();
+
+    const handleLogout = async () => {
+        await logout();
+        navigate("/signin", { replace: true });
+    };
 
     return (
         <>
-        <aside className="fixed left-0 top-0 z-50 h-screen w-[321px] shrink-0 overflow-y-auto rounded-r-[50px] bg-[#1f4d3f]">
-            {/* Brand header */}
-            <div className="relative mt-[38px] px-[26px]">
-                <Link to="/" className="group flex items-center gap-[12px] no-underline" aria-label="Threefold Home">
-                    <Photo
-                        src="/img/Threefold%20logo.png"
-                        alt="Threefold Logo"
-                        className="h-[42px] w-[42px] shrink-0 object-contain transition-transform group-hover:scale-105"
-                        fallback={<Logo size={42} />}
-                    />
-                    <div className="flex flex-col">
-                        <span className="font-['Inria_Serif',Georgia,serif] text-[15px] font-bold leading-[16px] tracking-[0.05em] text-[#f2f7f4] transition-colors group-hover:text-white">
-                            THREEFOLD
-                        </span>
-                        <span className="mt-[3px] max-w-[195px] font-['Inria_Serif',Georgia,serif] text-[8px] leading-[11px] text-[#a8c8b8]">
-                            Behavioral Interventions And Psychological Services
-                        </span>
-                    </div>
-                </Link>
-            </div>
+            <aside className="fixed left-0 top-0 z-50 h-screen w-[321px] shrink-0 overflow-y-auto rounded-r-[50px] bg-[#1f4d3f]">
+                {/* Brand header */}
+                <div className="relative mt-[38px] px-[26px]">
+                    <Link to="/" className="group flex items-center gap-[12px] no-underline" aria-label="Threefold Home">
+                        <Photo
+                            src="/img/Threefold%20logo.png"
+                            alt="Threefold Logo"
+                            className="h-[42px] w-[42px] shrink-0 object-contain transition-transform group-hover:scale-105"
+                            fallback={<Logo size={42} />}
+                        />
+                        <div className="flex flex-col">
+                            <span className="font-['Inria_Serif',Georgia,serif] text-[15px] font-bold leading-[16px] tracking-[0.05em] text-[#f2f7f4] transition-colors group-hover:text-white">
+                                THREEFOLD
+                            </span>
+                            <span className="mt-[3px] max-w-[195px] font-['Inria_Serif',Georgia,serif] text-[8px] leading-[11px] text-[#a8c8b8]">
+                                Behavioral Interventions And Psychological Services
+                            </span>
+                        </div>
+                    </Link>
+                </div>
 
-            <span className="absolute left-[40px] top-[164px] block text-[14px] font-bold uppercase tracking-[2.52px] text-[#a8c8b8]">
-                MENU
-            </span>
+                <span className="absolute left-[40px] top-[164px] block text-[14px] font-bold uppercase tracking-[2.52px] text-[#a8c8b8]">
+                    MENU
+                </span>
 
-            {/* Menu: bawat item may sariling slot, ang active ang nagiging white pill */}
-            <nav className="absolute left-[26px] right-0 top-[192px] flex flex-col gap-[16px]">
-                {ITEMS.map((item) => {
-                    const isActive = pathname === item.href;
-                    return (
-                        <Link
-                            key={item.key}
-                            to={item.href}
-                            aria-current={isActive ? "page" : undefined}
-                            className={`flex h-[56px] items-center rounded-l-[28px] pl-[14px] ${
-                                isActive
-                                    ? "gap-3 bg-white pl-[22px] text-[18px] font-bold text-[#1f6b55]"
-                                    : "text-[20px] font-semibold text-[#4a9b8e] hover:text-white"
-                            }`}
-                        >
-                            {isActive && <Icon name={item.icon} />}
-                            {item.label}
-                        </Link>
-                    );
-                })}
-            </nav>
+                {/* Menu: bawat item may sariling slot, ang active ang nagiging white pill */}
+                <nav className="absolute left-[26px] right-0 top-[192px] flex flex-col gap-[16px]">
+                    {ITEMS.map((item) => {
+                        const isActive = pathname === item.href;
+                        return (
+                            <Link
+                                key={item.key}
+                                to={item.href}
+                                aria-current={isActive ? "page" : undefined}
+                                className={`flex h-[56px] items-center rounded-l-[28px] pl-[14px] ${isActive
+                                        ? "gap-3 bg-white pl-[22px] text-[18px] font-bold text-[#1f6b55]"
+                                        : "text-[20px] font-semibold text-[#4a9b8e] hover:text-white"
+                                    }`}
+                            >
+                                {isActive && <Icon name={item.icon} />}
+                                {item.label}
+                            </Link>
+                        );
+                    })}
+                </nav>
 
-            <a
-                href="/logout"
-                className="absolute bottom-[60px] left-[40px] text-[20px] font-semibold text-[#4a9b8e] hover:text-white"
-            >
-                Logout
-            </a>
-        </aside>
-        <div className="w-[321px] shrink-0" aria-hidden="true" />
+                <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="absolute bottom-[60px] left-[40px] cursor-pointer border-0 bg-transparent p-0 text-[20px] font-semibold text-[#4a9b8e] hover:text-white"
+                >
+                    Logout
+                </button>
+            </aside>
+            <div className="w-[321px] shrink-0" aria-hidden="true" />
         </>
     );
 }

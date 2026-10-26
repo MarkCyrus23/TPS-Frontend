@@ -12,7 +12,7 @@ const serif = "font-['Inria_Serif',Georgia,serif]";
 const API_URL = "http://localhost:8000/api";
 
 async function api(path, options = {}) {
-  const token = localStorage.getItem("token"); // kung may login/Sanctum ka na
+  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
@@ -22,10 +22,21 @@ async function api(path, options = {}) {
       ...(options.headers || {}),
     },
   });
-  const data = await res.json().catch(() => ({}));
+
+  // Basahin muna bilang text para makita ang totoong sagot ng server kahit hindi JSON
+  const text = await res.text();
+  let data = {};
+  try {
+    data = JSON.parse(text);
+  } catch {
+    /* hindi JSON */
+  }
+
   if (!res.ok) {
+    console.error(`API ${options.method || "GET"} ${path} -> ${res.status}`, text);
+    if (res.status === 401) throw new Error("Your session expired. Please sign in again.");
     const firstError = data.errors ? Object.values(data.errors)[0][0] : null;
-    throw new Error(firstError || data.message || "Something went wrong.");
+    throw new Error(firstError || data.message || `Server error (${res.status}). Check the browser console and laravel.log.`);
   }
   return data;
 }
@@ -453,8 +464,8 @@ export default function AdminSchedule() {
                       key={opt.key}
                       onClick={() => setAvailabilityMode(opt.key)}
                       className={`rounded-[8px] border p-[12px] transition-all cursor-pointer ${availabilityMode === opt.key
-                          ? "border-[#1f6b55] bg-white shadow-sm ring-1 ring-[#1f6b55]"
-                          : "border-[#c7b6b6] bg-[#fbfdfc] opacity-70"
+                        ? "border-[#1f6b55] bg-white shadow-sm ring-1 ring-[#1f6b55]"
+                        : "border-[#c7b6b6] bg-[#fbfdfc] opacity-70"
                         }`}
                     >
                       <div className="flex items-center gap-[6px] text-[#202020]">

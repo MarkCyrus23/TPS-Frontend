@@ -1,9 +1,14 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Navbar, Footer, Logo, Photo, btnSolid, btnGhost } from "../components/Layout";
+import { apiFetch, saveAuth } from "../auth"; // <- ayusin ang path kung iba ang lokasyon ng auth.js
 
-const DEMO_USER = "admin";
-const DEMO_PASS = "12345";
+// Saan pupunta ang user pagkatapos mag-login, depende sa role.
+const ROLE_HOME = {
+  ADMIN: "/admin",
+  AFFILIATE: "/affiliate",
+  CLIENT: "/appointments",
+};
 
 function EyeIcon({ off }) {
   return (
@@ -34,8 +39,10 @@ export default function SignIn() {
   const from = location.state?.from || "/appointments";
 
   const [mode, setMode] = useState("signin"); // signin | signup | forgot
-  const [username, setUsername] = useState(() => localStorage.getItem("tf_user") || "");
-  const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState(() => localStorage.getItem("tf_user") || "");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [remember, setRemember] = useState(() => !!localStorage.getItem("tf_user"));
@@ -52,7 +59,19 @@ export default function SignIn() {
     setTimeout(() => setShaking(false), 450);
   };
 
-  const submit = (e) => {
+  // Pagkatapos ng successful login/register
+  const finish = (data, rememberMe) => {
+    saveAuth(data.token, data.user, rememberMe);
+    rememberMe
+      ? localStorage.setItem("tf_user", data.user.email)
+      : localStorage.removeItem("tf_user");
+
+    // Client -> bumabalik sa pinanggalingan (default /appointments). Admin/Affiliate -> sa dashboard nila.
+    const target = data.user.role === "CLIENT" ? from : ROLE_HOME[data.user.role] || from;
+    navigate(target, { replace: true });
+  };
+
+  const submit = async (e) => {
     e.preventDefault();
     if (loading) return;
     setError("");
@@ -60,51 +79,60 @@ export default function SignIn() {
 
     if (mode === "forgot") {
       if (!email.includes("@")) return fail("Enter a valid email address.");
+      // TODO: wala pang backend para dito
       setInfo("If an account exists for that email, a reset link would be sent (demo only).");
       return;
     }
 
     if (mode === "signup") {
-      if (!username.trim() || !email.includes("@") || password.length < 5) {
-        return fail("Enter a username, valid email, and password (min 5 characters).");
-      }
+      if (!firstName.trim() || !lastName.trim()) return fail("Please enter your first and last name.");
+      if (!email.includes("@")) return fail("Enter a valid email address.");
+      if (password.length < 8) return fail("Password must be at least 8 characters.");
       if (password !== confirm) return fail("Passwords do not match.");
+
       setLoading(true);
-      setTimeout(() => {
-        sessionStorage.setItem("tf_auth", "1");
-        localStorage.setItem("tf_user", username.trim());
+      try {
+        const data = await apiFetch("/register", {
+          method: "POST",
+          body: JSON.stringify({
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            email: email.trim(),
+            phone: phone.trim() || null,
+            password,
+            password_confirmation: confirm,
+          }),
+        });
+        finish(data, true);
+      } catch (err) {
+        fail(err.message);
+      } finally {
         setLoading(false);
-        navigate(from);
-      }, 600);
+      }
       return;
     }
 
-    if (!username.trim() || !password) return fail("Please enter your username and password.");
+    // signin
+    if (!email.trim() || !password) return fail("Please enter your email and password.");
     setLoading(true);
-    setTimeout(() => {
-      const ok =
-        username.trim().toLowerCase() === DEMO_USER && password === DEMO_PASS;
-      if (!ok) {
-        setLoading(false);
-        return fail("Incorrect username or password. Demo: admin / 12345");
-      }
-      remember
-        ? localStorage.setItem("tf_user", username.trim())
-        : localStorage.removeItem("tf_user");
-      sessionStorage.setItem("tf_auth", "1");
+    try {
+      const data = await apiFetch("/login", {
+        method: "POST",
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+      finish(data, remember);
+    } catch (err) {
+      fail(err.message);
+    } finally {
       setLoading(false);
-      navigate(from);
-    }, 700);
+    }
   };
 
   return (
     <div className="font-sans text-black bg-tf-bg min-h-screen overflow-x-hidden antialiased">
       <Navbar />
       <main className="relative py-14 pb-24">
-        <div
-          className="pointer-events-none absolute inset-0 overflow-hidden"
-          aria-hidden
-        >
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
           <span className="absolute -left-20 top-10 size-64 rounded-full bg-tf-soft opacity-70" />
           <span className="absolute -right-16 bottom-20 size-72 rounded-full bg-[#d7eee8] opacity-60" />
         </div>
@@ -162,11 +190,10 @@ export default function SignIn() {
                 <button
                   key={id}
                   type="button"
-                  className={`flex-1 rounded-lg border-0 py-2 font-serif text-sm cursor-pointer ${
-                    mode === id || (mode === "forgot" && id === "signin")
+                  className={`flex-1 rounded-lg border-0 py-2 font-serif text-sm cursor-pointer ${mode === id || (mode === "forgot" && id === "signin")
                       ? "bg-white font-bold shadow-sm"
                       : "bg-transparent"
-                  }`}
+                    }`}
                   onClick={() => {
                     setMode(id);
                     setError("");
@@ -187,42 +214,67 @@ export default function SignIn() {
             </h2>
             <p className="mt-1 text-sm text-[#666]">
               {mode === "signup"
-                ? "Register for the client demo (stored locally)."
+                ? "Create a client account to book and manage your sessions."
                 : mode === "forgot"
                   ? "Enter your email to receive reset instructions."
-                  : "Demo credentials: admin / 12345"}
+                  : "Use the email and password you registered with."}
             </p>
 
             <form className="mt-6 flex flex-col gap-4" onSubmit={submit} noValidate>
-              {mode !== "forgot" && (
-                <label className="text-xs font-bold tracking-[0.08em] text-[#666]">
-                  USERNAME
-                  <input
-                    className={inputClass}
-                    value={username}
-                    onChange={(e) => {
-                      setUsername(e.target.value);
-                      setError("");
-                    }}
-                    autoComplete="username"
-                    placeholder="admin"
-                  />
-                </label>
+              {mode === "signup" && (
+                <div className="grid grid-cols-2 gap-3 max-[560px]:grid-cols-1">
+                  <label className="text-xs font-bold tracking-[0.08em] text-[#666]">
+                    FIRST NAME
+                    <input
+                      className={inputClass}
+                      value={firstName}
+                      onChange={(e) => {
+                        setFirstName(e.target.value);
+                        setError("");
+                      }}
+                      autoComplete="given-name"
+                    />
+                  </label>
+                  <label className="text-xs font-bold tracking-[0.08em] text-[#666]">
+                    LAST NAME
+                    <input
+                      className={inputClass}
+                      value={lastName}
+                      onChange={(e) => {
+                        setLastName(e.target.value);
+                        setError("");
+                      }}
+                      autoComplete="family-name"
+                    />
+                  </label>
+                </div>
               )}
 
-              {(mode === "signup" || mode === "forgot") && (
+              <label className="text-xs font-bold tracking-[0.08em] text-[#666]">
+                EMAIL
+                <input
+                  type="email"
+                  className={inputClass}
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setError("");
+                  }}
+                  autoComplete="email"
+                  placeholder="you@email.com"
+                />
+              </label>
+
+              {mode === "signup" && (
                 <label className="text-xs font-bold tracking-[0.08em] text-[#666]">
-                  EMAIL
+                  PHONE (OPTIONAL)
                   <input
-                    type="email"
+                    type="tel"
                     className={inputClass}
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      setError("");
-                    }}
-                    autoComplete="email"
-                    placeholder="you@email.com"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    autoComplete="tel"
+                    placeholder="09xx xxx xxxx"
                   />
                 </label>
               )}
@@ -295,11 +347,10 @@ export default function SignIn() {
               {(error || info) && (
                 <p
                   role="alert"
-                  className={`m-0 rounded-lg px-4 py-3 text-sm ${
-                    error
+                  className={`m-0 rounded-lg px-4 py-3 text-sm ${error
                       ? "border border-red-200 bg-red-50 text-red-800"
                       : "border border-tf-teal/30 bg-tf-soft text-tf-ink"
-                  }`}
+                    }`}
                 >
                   {error || info}
                 </p>
@@ -327,11 +378,7 @@ export default function SignIn() {
             )}
 
             <p className="mt-6 text-center text-sm text-[#666]">
-              New here?{" "}
-              <Link to="/book" className="font-semibold text-tf-teal no-underline hover:underline">
-                Book a session
-              </Link>{" "}
-              without an account, or register above.
+              New here? Choose <b>Register</b> above to create an account, then you can book a session.
             </p>
           </section>
         </div>
