@@ -18,6 +18,10 @@ import AdminPayment from "./admin/adminpay";
 import AdminBackup from "./admin/adminbackup";
 import AdminPaymentMethod from "./admin/adminpaymentmethod";
 import AdminSchedule from "./admin/adminschedule";
+import AdminAccounts from "./admin/adminaccounts";
+import AdminServices from "./admin/adminservices";
+import AdminClient from "./admin/adminclient";
+import AdminHome from "./admin/adminhome";
 import AffiliateDashboard from "./affiliate/affiliatedashboard";
 import AffiliateAppointment from "./affiliate/affiliateappointment";
 import AffiliateSchedule from "./affiliate/affiliateschedule";
@@ -78,7 +82,10 @@ export default function App() {
       <Route path="/admin/backup" element={<AdminOnly><AdminBackup /></AdminOnly>} />
       <Route path="/admin/payment-method" element={<AdminOnly><AdminPaymentMethod /></AdminOnly>} />
       <Route path="/admin/schedule" element={<AdminOnly><AdminSchedule /></AdminOnly>} />
-
+      <Route path="/admin/accounts" element={<AdminOnly><AdminAccounts /></AdminOnly>} />
+      <Route path="/admin/services" element={<AdminOnly><AdminServices /></AdminOnly>} />
+      <Route path="/admin/client" element={<AdminOnly><AdminClient /></AdminOnly>} />
+      <Route path="/admin/home" element={<AdminOnly><AdminHome /></AdminOnly>} />
       {/* AFFILIATE */}
       <Route path="/affiliate" element={<AffiliateOnly><AffiliateDashboard /></AffiliateOnly>} />
       <Route path="/affiliate/appointment" element={<AffiliateOnly><AffiliateAppointment /></AffiliateOnly>} />
