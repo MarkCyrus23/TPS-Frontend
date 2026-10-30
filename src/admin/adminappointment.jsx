@@ -72,7 +72,7 @@ const Header = () => {
 };
 
 const Stepper = ({ steps }) => (
-    <div className="flex items-start" aria-label="Appointment progress">
+    <div className="flex w-full items-start xl:w-auto" aria-label="Appointment progress">
         {steps.map((st, i) => (
             <React.Fragment key={STEP_LABELS[i]}>
                 {i > 0 && (
@@ -84,12 +84,12 @@ const Stepper = ({ steps }) => (
                 <div className="flex w-[40px] flex-col items-center">
                     <span
                         className={`flex h-[22px] w-[22px] items-center justify-center rounded-full border ${st === "done"
-                                ? "border-[#4a9b8e] bg-[#4a9b8e]"
-                                : st === "current"
-                                    ? "border-[#202020] bg-white"
-                                    : st === "warn"
-                                        ? "border-[#e8c547] bg-[#fdf1bc]"
-                                        : "border-[#b9b9b9] bg-white"
+                            ? "border-[#4a9b8e] bg-[#4a9b8e]"
+                            : st === "current"
+                                ? "border-[#202020] bg-white"
+                                : st === "warn"
+                                    ? "border-[#e8c547] bg-[#fdf1bc]"
+                                    : "border-[#b9b9b9] bg-white"
                             }`}
                     >
                         {st === "done" && (
@@ -153,8 +153,9 @@ const AppointmentCard = ({ a, open, onToggle, busy, onApprove, onDecline, onComp
     const d = new Date(a.date + "T00:00");
 
     return (
-        <article className="rounded-[10px] border border-[#c7b6b6] bg-white px-[24px] pb-[16px] pt-[20px]">
-            <div className="flex items-center">
+        <article className="rounded-[10px] border border-[#c7b6b6] bg-white px-[16px] pb-[16px] pt-[16px] sm:px-[24px] sm:pt-[20px]">
+            {/* Mobile/tablet: date + info (+ chip) tapos stepper sa sariling row. xl pataas: isang row lang */}
+            <div className="flex flex-wrap items-center gap-x-[16px] gap-y-[16px] xl:flex-nowrap xl:gap-x-0">
                 {/* date block */}
                 <div className={`${serif} flex h-[68px] w-[62px] shrink-0 flex-col items-center justify-center rounded-[6px] bg-[#a9d0c8] leading-[1.15] text-[#1f4d3f]`}>
                     <span className="text-[17px] font-bold">{d.getDate()}</span>
@@ -168,16 +169,17 @@ const AppointmentCard = ({ a, open, onToggle, busy, onApprove, onDecline, onComp
                         {a.service_name} · {to12(a.start_time)} – {to12(a.end_time)}
                         <ConsentChip status={a.consent_status} />
                     </div>
+                    {/* chip dito sa mobile/tablet */}
+                    <StatusChip s={s} className="mt-[8px] inline-flex xl:hidden" />
                 </div>
 
                 <Stepper steps={s.steps} />
 
-                <span className={`${serif} ml-[40px] flex h-[22px] w-[118px] items-center justify-center rounded-full text-[10px] font-bold ${s.cls}`}>
-                    {s.chip}
-                </span>
+                {/* chip sa gilid sa xl pataas */}
+                <StatusChip s={s} className="ml-[40px] hidden w-[118px] xl:flex" />
             </div>
 
-            <div className="mt-[18px] flex items-center justify-between border-t border-[#e8e8e8] pt-[14px]">
+            <div className="mt-[18px] flex flex-wrap items-center justify-between gap-x-[12px] gap-y-[12px] border-t border-[#e8e8e8] pt-[14px]">
                 <button
                     type="button"
                     onClick={onToggle}
@@ -232,8 +234,8 @@ const AppointmentCard = ({ a, open, onToggle, busy, onApprove, onDecline, onComp
             )}
 
             {open && (
-                <div className="mt-[14px] grid grid-cols-3 gap-[24px] rounded-[6px] border border-[#c9d9d4] bg-[#e8f1ee] px-[24px] py-[18px]">
-                    <div>
+                <div className="mt-[14px] grid grid-cols-1 gap-[16px] rounded-[6px] border border-[#c9d9d4] bg-[#e8f1ee] px-[16px] py-[16px] sm:grid-cols-3 sm:gap-[24px] sm:px-[24px] sm:py-[18px]">
+                    <div className="min-w-0">
                         <div className={`${serif} text-[12px] font-bold text-[#202020]`}>Contact</div>
                         <div className={`${serif} mt-[6px] break-all text-[12px] leading-[16px] text-[#444]`}>
                             {a.client_email || "—"}
@@ -252,7 +254,7 @@ const AppointmentCard = ({ a, open, onToggle, busy, onApprove, onDecline, onComp
                             )}
                         </div>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                         <div className={`${serif} text-[12px] font-bold text-[#202020]`}>Booking</div>
                         <div className={`${serif} mt-[6px] text-[12px] leading-[16px] text-[#444]`}>
                             Ref: {a.reference}
@@ -268,7 +270,7 @@ const AppointmentCard = ({ a, open, onToggle, busy, onApprove, onDecline, onComp
                             )}
                         </div>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                         <div className={`${serif} text-[12px] font-bold text-[#202020]`}>Emergency Contact</div>
                         <div className={`${serif} mt-[6px] text-[12px] leading-[16px] text-[#444]`}>
                             {a.emergency_name || "—"}
@@ -284,8 +286,8 @@ const AppointmentCard = ({ a, open, onToggle, busy, onApprove, onDecline, onComp
 };
 
 const DayHeading = ({ children }) => (
-    <div className="mt-[34px] flex items-center gap-[14px] first:mt-0">
-        <h2 className={`${inter} whitespace-nowrap text-[15px] font-bold tracking-[3.15px] text-[#4a9b8e]`}>{children}</h2>
+    <div className="mt-[28px] flex items-center gap-[14px] first:mt-0 sm:mt-[34px]">
+        <h2 className={`${inter} text-[13px] font-bold tracking-[2.5px] text-[#4a9b8e] sm:whitespace-nowrap sm:text-[15px] sm:tracking-[3.15px]`}>{children}</h2>
         <span className="h-px flex-1 bg-[#c9c9c9]" />
     </div>
 );
@@ -376,16 +378,33 @@ export default function AdminAppointment() {
     }, [visible]);
 
     return (
-        <div className="flex min-h-screen w-full min-w-[1440px] bg-[#f2f2f2] antialiased">
+        <div className="flex min-h-screen w-full bg-[#f2f2f2] antialiased">
             <style>{FONT_CSS}</style>
 
-            <AdminNavigation />
+            {/* Sidebar: laging nakikita sa lg pataas */}
+            <div className="hidden lg:block">
+                <AdminNavigation />
+            </div>
 
-            <main className="flex-1 px-[36px] pb-[60px] pt-[51px]">
-                <Header />
+            {/* Sidebar: drawer sa mobile/tablet */}
+            {navOpen && (
+                <div className="fixed inset-0 z-50 flex lg:hidden">
+                    <div className="h-full overflow-y-auto bg-white">
+                        <AdminNavigation />
+                    </div>
+                    <button
+                        aria-label="Close menu"
+                        onClick={() => setNavOpen(false)}
+                        className="flex-1 bg-black/40"
+                    />
+                </div>
+            )}
+
+            <main className="min-w-0 flex-1 px-[16px] pb-[48px] pt-[20px] sm:px-[28px] sm:pt-[32px] lg:px-[36px] lg:pb-[60px] lg:pt-[51px]">
+                <Header onMenu={() => setNavOpen(true)} />
 
                 {/* Status filters */}
-                <div className="mt-[56px] grid grid-cols-6 gap-[27px]">
+                <div className="mt-[28px] grid grid-cols-2 gap-[12px] sm:mt-[40px] sm:grid-cols-3 xl:mt-[56px] xl:grid-cols-6 xl:gap-[27px]">
                     {FILTERS.map(([key, label]) => {
                         const active = filter === key;
                         return (
@@ -405,7 +424,7 @@ export default function AdminAppointment() {
                 </div>
 
                 {/* Search */}
-                <label className="relative mt-[26px] block w-[286px]">
+                <label className="relative mt-[22px] block w-full sm:mt-[26px] sm:w-[286px]">
                     <span className="sr-only">Search people</span>
                     <svg className="absolute left-[15px] top-[8px]" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round">
                         <circle cx="11" cy="11" r="7" />

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Logo, Photo } from "../components/Layout";
 import { logout } from "../auth";
@@ -11,9 +11,12 @@ const NAV_ITEMS = [
     { label: "Dashboard", to: "/admin" },
     { label: "Appointment", to: "/admin/appointment" },
     { label: "Schedules", to: "/admin/schedule" },
-    { label: "Services", to: "/services" },
+    { label: "Services", to: "/admin/services" },
     { label: "Payment", to: "/admin/payment" },
     { label: "Backup and Restore", to: "/admin/backup" },
+    { label: "Accounts", to: "/admin/accounts" },
+    { label: "Client", to: "/admin/client" },
+    { label: "Home", to: "/admin/home" },
 ];
 
 // Para ma-preview ng admin ang ibang site nang hindi nagla-logout
@@ -47,6 +50,25 @@ const isActiveRoute = (pathname, to) => {
 export default function AdminNavigation() {
     const { pathname } = useLocation();
     const navigate = useNavigate();
+    const [open, setOpen] = useState(false); // para sa mobile drawer lang
+
+    const close = () => setOpen(false);
+
+    // Isara kapag nagpalit ng page
+    useEffect(() => { setOpen(false); }, [pathname]);
+
+    // Esc para isara, at i-lock ang scroll ng page habang bukas ang drawer
+    useEffect(() => {
+        if (!open) return;
+        const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+        window.addEventListener("keydown", onKey);
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        return () => {
+            window.removeEventListener("keydown", onKey);
+            document.body.style.overflow = prev;
+        };
+    }, [open]);
 
     const handleLogout = async () => {
         await logout();
@@ -55,9 +77,47 @@ export default function AdminNavigation() {
 
     return (
         <>
-            <aside className="fixed left-0 top-0 z-50 flex h-screen w-[321px] shrink-0 flex-col overflow-y-auto rounded-tr-[64px] rounded-br-[64px] rounded-bl-[32px] bg-[#1f4d3f]">
+            {/* Hamburger: mobile at tablet lang */}
+            <button
+                type="button"
+                onClick={() => setOpen(true)}
+                aria-label="Open menu"
+                aria-expanded={open}
+                className="fixed left-4 top-3 z-40 grid h-[40px] w-[40px] place-items-center rounded-[8px] border border-[#c7b6b6] bg-white lg:hidden"
+            >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2a8570" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <path d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+
+            {/* Backdrop: mobile lang */}
+            {open && (
+                <button
+                    type="button"
+                    aria-label="Close menu"
+                    onClick={close}
+                    className="fixed inset-0 z-40 cursor-default bg-black/40 lg:hidden"
+                />
+            )}
+
+            <aside
+                className={`fixed left-0 top-0 z-50 flex h-screen w-[min(321px,85vw)] shrink-0 flex-col overflow-y-auto rounded-tr-[64px] rounded-br-[64px] rounded-bl-[32px] bg-[#1f4d3f] transition-[transform,visibility] duration-300 lg:w-[321px] lg:translate-x-0 ${open ? "translate-x-0" : "max-lg:invisible max-lg:-translate-x-full"
+                    }`}
+            >
+                {/* Close button: mobile lang */}
+                <button
+                    type="button"
+                    onClick={close}
+                    aria-label="Close menu"
+                    className="absolute right-[44px] top-[34px] grid h-[36px] w-[36px] place-items-center rounded-full text-[#a8c8b8] hover:text-white lg:hidden"
+                >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+                        <path d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                </button>
+
                 <div className="relative mt-[38px] px-[26px]">
-                    <Link to="/" className="group flex items-center gap-[12px] no-underline" aria-label="Threefold Home">
+                    <Link to="/" onClick={close} className="group flex items-center gap-[12px] no-underline" aria-label="Threefold Home">
                         <Photo
                             src="/img/Threefold%20logo.png"
                             className="h-[42px] w-[42px] shrink-0 object-contain transition-transform group-hover:scale-105"
@@ -87,6 +147,7 @@ export default function AdminNavigation() {
                             <Link
                                 key={label}
                                 to={to}
+                                onClick={close}
                                 aria-current={active ? "page" : undefined}
                                 className={active
                                     ? "ml-[26px] flex h-[52px] items-center gap-[14px] rounded-l-[26px] bg-white pl-[23px] no-underline"
@@ -116,6 +177,7 @@ export default function AdminNavigation() {
                         <Link
                             key={label}
                             to={to}
+                            onClick={close}
                             className={`${inknut} flex items-center gap-[8px] px-[40px] py-[9px] text-[17px] font-semibold text-[#2a8570] no-underline transition-colors hover:text-[#4fbfa5]`}
                         >
                             {label}
@@ -132,7 +194,9 @@ export default function AdminNavigation() {
                     Logout
                 </button>
             </aside>
-            <div className="w-[321px] shrink-0" aria-hidden="true" />
+
+            {/* Spacer: sa desktop lang, dahil fixed ang sidebar */}
+            <div className="hidden w-[321px] shrink-0 lg:block" aria-hidden="true" />
         </>
     );
 }

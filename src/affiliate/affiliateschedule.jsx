@@ -246,6 +246,8 @@ export default function AffiliateSchedule() {
               <p className={`${serif} text-[15px] text-[#555] mt-[8px] max-w-[620px]`}>
                 Set the days and hours clients can book with you. Clients only see the times you open here.
               </p>
+              {/* Date chip: nasa ilalim ng description sa mobile */}
+              <DateChip className="mt-[12px] inline-flex sm:hidden" />
             </div>
 
             <div className="flex items-center gap-[17px] pt-[6px]">
@@ -259,7 +261,7 @@ export default function AffiliateSchedule() {
 
               <button
                 aria-label="Notifications"
-                className="relative flex h-[37px] w-[46px] items-center justify-center rounded-[8px] border border-[#c7b6b6] bg-white hover:bg-[#f9fbf9] transition-colors cursor-pointer"
+                className="relative flex h-[37px] w-[46px] cursor-pointer items-center justify-center rounded-[8px] border border-[#c7b6b6] bg-white transition-colors hover:bg-[#f9fbf9]"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2a8570" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -294,7 +296,7 @@ export default function AffiliateSchedule() {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-[8px]">
+                  <div className="flex shrink-0 items-center gap-[8px]">
                     <button
                       onClick={() => changeMonth(-1)}
                       className="w-[28px] h-[28px] rounded-full bg-[#dcf0e8] text-[#1f6b55] flex items-center justify-center hover:bg-[#cbe8dc] transition-colors cursor-pointer border-0"
@@ -414,7 +416,7 @@ export default function AffiliateSchedule() {
 
               <div className="flex items-center gap-[18px] mt-[26px] pt-[14px] border-t border-[#edf2ef] text-[12px] text-[#666]">
                 <div className="flex items-center gap-[6px]">
-                  <span className="w-[12px] h-[12px] rounded-[3px] bg-[#9ccac0]" />
+                  <span className="h-[12px] w-[12px] rounded-[3px] bg-[#9ccac0]" />
                   <span className={serif}>Available</span>
                 </div>
                 <div className="flex items-center gap-[6px]">
