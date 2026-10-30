@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Outlet } from "react-router-dom";
 import Home from "./Client/ClientDashboard";
 import SignIn from "./SignIn/SignIn";
 import Services from "./Services/Services";
@@ -9,6 +9,7 @@ import ReviewAndPay from "./BookSession/ReviewAndPay";
 import Approval from "./BookSession/Approval";
 import Consent from "./BookSession/Consent";
 import Confirmation from "./BookSession/Confirmation";
+import { BookingProvider } from "./BookSession/bookingContext";
 import MyAppointments from "./MyAppointments/MyAppointments";
 import Contact from "./Contact/Contact";
 import RequireAuth from "./components/RequireAuth";
@@ -34,6 +35,17 @@ const AffiliateOnly = ({ children }) => (
   <RequireAuth roles={["AFFILIATE", "ADMIN"]}>{children}</RequireAuth>
 );
 
+// Iisang BookingProvider para sa lahat ng /book/* steps (shared ang state)
+function BookingLayout() {
+  return (
+    <ClientArea>
+      <BookingProvider>
+        <Outlet />
+      </BookingProvider>
+    </ClientArea>
+  );
+}
+
 export default function App() {
   return (
     <Routes>
@@ -41,14 +53,18 @@ export default function App() {
       <Route path="/services" element={<Services />} />
       <Route path="/signin" element={<SignIn />} />
 
-      {/* Booking flow + My appointments (CLIENT, or ADMIN for preview) */}
-      <Route path="/book" element={<ClientArea><BookSession /></ClientArea>} />
-      <Route path="/book/date-time" element={<ClientArea><DateTime /></ClientArea>} />
-      <Route path="/book/info" element={<ClientArea><UserInfo /></ClientArea>} />
-      <Route path="/book/review" element={<ClientArea><ReviewAndPay /></ClientArea>} />
-      <Route path="/book/approval" element={<ClientArea><Approval /></ClientArea>} />
-      <Route path="/book/consent" element={<ClientArea><Consent /></ClientArea>} />
-      <Route path="/book/confirmation" element={<ClientArea><Confirmation /></ClientArea>} />
+      {/* Booking flow (CLIENT, or ADMIN for preview) — naka-wrap sa BookingProvider */}
+      <Route element={<BookingLayout />}>
+        <Route path="/book" element={<BookSession />} />
+        <Route path="/book/date-time" element={<DateTime />} />
+        <Route path="/book/info" element={<UserInfo />} />
+        <Route path="/book/review" element={<ReviewAndPay />} />
+        <Route path="/book/approval" element={<Approval />} />
+        <Route path="/book/consent" element={<Consent />} />
+        <Route path="/book/confirmation" element={<Confirmation />} />
+      </Route>
+
+      {/* My appointments (CLIENT, or ADMIN for preview) */}
       <Route path="/appointments" element={<ClientArea><MyAppointments /></ClientArea>} />
 
       {/* Contact page (signed-in users only). Path is case-insensitive in v6. */}

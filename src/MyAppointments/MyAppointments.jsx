@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Navbar,
   Footer,
@@ -9,84 +9,58 @@ import {
   btnSolid,
   btnGhost,
 } from "../components/Layout";
+import { apiFetch } from "../auth";
+import { to12 } from "../components/payUtils";
 
-const APPOINTMENTS = [
-  {
-    id: "1",
-    tab: "upcoming",
-    service: "Psychotherapy / Counseling",
-    doctor: "Dr. Maria Santos",
-    dateLabel: "Thu, Oct 15",
-    time: "9:00 AM - 10:00 AM",
+const MESSAGES = {
+  Confirmed: "Your appointment is confirmed. We look forward to seeing you.",
+  "Pending approval": "Waiting for your psychologist to approve this appointment.",
+  "Pending payment verification": "Payment verification is in progress before approval.",
+  Completed: "Session completed. Thank you for attending.",
+  Cancelled: "This appointment was cancelled. Payments are non-refundable.",
+  Declined: "Your psychologist could not accept this request.",
+  "Payment not verified": "We could not verify your payment.",
+  Expired: "This appointment was not approved before its schedule.",
+};
+
+// API row -> hugis na ginagamit ng UI
+const toItem = (a) => {
+  const start = new Date(`${a.date}T${a.start_time}:00`);
+  const upcoming = a.tab === "upcoming";
+  const pendingPay = a.label === "Pending payment verification";
+  const balance = Number(a.balance) || 0;
+
+  let payment = "Paid in full";
+  if (a.tab === "cancelled") payment = "No refund";
+  else if (pendingPay) payment = "Pending verification";
+  else if (balance > 0) payment = "Downpayment received";
+
+  let consent = "Pending";
+  if (a.consent_status === "not_required") consent = "Not required";
+  else if (a.consent_status === "submitted") consent = "Completed";
+
+  return {
+    id: String(a.id),
+    raw: a,
+    tab: a.tab,
+    service: a.service_name,
+    doctor: a.psychologist || "Assigned by the clinic",
+    dateLabel: start.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    }),
+    time: `${to12(a.start_time)} - ${to12(a.end_time)}`,
     format: "To be determined",
-    status: "Confirmed",
-    payment: "Paid in full",
-    balance: 0,
-    consent: "Completed",
-    target: new Date(2026, 9, 15, 9, 0, 0).getTime(),
-    message: "Your appointment is confirmed. We look forward to seeing you.",
-  },
-  {
-    id: "2",
-    tab: "upcoming",
-    service: "ABA Therapy",
-    doctor: "Dr. Ana Reyes",
-    dateLabel: "Tue, Oct 20",
-    time: "9:00 AM - 11:00 AM",
-    format: "In-person",
-    status: "Confirmed",
-    payment: "Downpayment received",
-    balance: 750,
-    consent: "Completed",
-    target: new Date(2026, 9, 20, 9, 0, 0).getTime(),
-    message: "Remaining balance of ₱750 is due after the session.",
-  },
-  {
-    id: "3",
-    tab: "upcoming",
-    service: "Assessment",
-    doctor: "Dr. Juan Dela Cruz",
-    dateLabel: "Fri, Oct 23",
-    time: "1:00 PM - 2:00 PM",
-    format: "Online",
-    status: "Pending approval",
-    payment: "Pending verification",
-    balance: 0,
-    consent: "Pending",
-    target: new Date(2026, 9, 23, 13, 0, 0).getTime(),
-    message: "Payment verification is in progress before psychologist approval.",
-  },
-  {
-    id: "4",
-    tab: "completed",
-    service: "Psychotherapy / Counseling",
-    doctor: "Dr. Maria Santos",
-    dateLabel: "Mon, Sep 28",
-    time: "10:00 AM - 11:00 AM",
-    format: "In-person",
-    status: "Completed",
-    payment: "Paid in full",
-    balance: 0,
-    consent: "Completed",
-    target: null,
-    message: "Session completed. Thank you for attending.",
-  },
-  {
-    id: "5",
-    tab: "cancelled",
-    service: "Assessment",
-    doctor: "Dr. Juan Dela Cruz",
-    dateLabel: "Wed, Sep 10",
-    time: "2:00 PM - 3:00 PM",
-    format: "Online",
-    status: "Cancelled",
-    payment: "Refunded",
-    balance: 0,
-    consent: "N/A",
-    target: null,
-    message: "This appointment was cancelled by the client.",
-  },
-];
+    status: a.label,
+    payment,
+    balance,
+    consent,
+    target: upcoming ? start.getTime() : null,
+    message: MESSAGES[a.label] || "",
+    canChange: !!(a.can_reschedule && a.can_cancel),
+  };
+};
 
 const avatarClass = "size-12 rounded-full object-cover bg-[#aac6b7] shrink-0";
 const avatarFallback = <div className="size-12 rounded-full bg-[#aac6b7]" />;
@@ -128,7 +102,7 @@ function Countdown({ target }) {
   );
 }
 
-function Dialog({ title, children, onClose, onConfirm, confirmLabel, danger }) {
+function Dialog({ title, children, onClose, onConfirm, confirmLabel, danger, busy, error }) {
   return (
     <div
       className="fixed inset-0 z-[100] grid place-items-center bg-black/45 p-4"
@@ -138,20 +112,28 @@ function Dialog({ title, children, onClose, onConfirm, confirmLabel, danger }) {
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
         <h3 className="m-0 font-serif text-xl text-[#202020]">{title}</h3>
         <div className="mt-3 text-sm leading-relaxed text-[#555]">{children}</div>
+        {error && (
+          <p
+            role="alert"
+            className="mb-0 mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+          >
+            {error}
+          </p>
+        )}
         <div className="mt-6 flex flex-wrap justify-end gap-3">
-          <button type="button" className={btnGhost} onClick={onClose}>
+          <button type="button" className={btnGhost} onClick={onClose} disabled={busy}>
             Keep appointment
           </button>
           <button
             type="button"
-            className={
-              danger
+            disabled={busy}
+            className={`${danger
                 ? `${btnSolid} !bg-red-700 hover:!shadow-[0_10px_22px_-8px_rgba(153,27,27,0.45)]`
                 : btnSolid
-            }
+              } disabled:cursor-not-allowed disabled:opacity-55`}
             onClick={onConfirm}
           >
-            {confirmLabel}
+            {busy ? "Please wait…" : confirmLabel}
           </button>
         </div>
       </div>
@@ -178,10 +160,38 @@ function EmptyState({ tab }) {
 }
 
 export default function MyAppointments() {
+  const navigate = useNavigate();
   const [tab, setTab] = useState("upcoming");
-  const [items, setItems] = useState(APPOINTMENTS);
-  const [dialog, setDialog] = useState(null); // { type, id }
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [dialog, setDialog] = useState(null); // { type: "cancel" | "reschedule", id }
+  const [busy, setBusy] = useState(false);
+  const [dialogError, setDialogError] = useState("");
   const [detailsId, setDetailsId] = useState(null);
+
+  const load = () =>
+    apiFetch("/my-appointments")
+      .then((d) => {
+        const list = (d.appointments || []).map(toItem);
+        // upcoming: pinakamalapit muna; ang iba: pinakabago muna (galing sa backend)
+        const up = list
+          .filter((a) => a.tab === "upcoming")
+          .sort((a, b) => a.target - b.target);
+        const rest = list.filter((a) => a.tab !== "upcoming");
+        setItems([...up, ...rest]);
+        setLoadError("");
+      })
+      .catch((err) => {
+        if (err.message?.includes("session expired")) return navigate("/signin");
+        setLoadError(err.message || "Could not load your appointments.");
+      })
+      .finally(() => setLoading(false));
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filtered = useMemo(() => items.filter((a) => a.tab === tab), [items, tab]);
   const next = items.find((a) => a.tab === "upcoming") || null;
@@ -193,30 +203,47 @@ export default function MyAppointments() {
     cancelled: items.filter((a) => a.tab === "cancelled").length,
   };
 
-  const confirmAction = () => {
-    if (!dialog) return;
-    setItems((list) =>
-      list.map((a) => {
-        if (a.id !== dialog.id) return a;
-        if (dialog.type === "cancel") {
-          return {
-            ...a,
-            tab: "cancelled",
-            status: "Cancelled",
-            message: "This appointment was cancelled.",
-          };
-        }
-        if (dialog.type === "reschedule") {
-          return {
-            ...a,
-            message: "Reschedule requested — our team will contact you with new options.",
-            status: "Reschedule requested",
-          };
-        }
-        return a;
-      })
-    );
+  const closeDialog = () => {
     setDialog(null);
+    setDialogError("");
+  };
+
+  const confirmAction = async () => {
+    if (!dialog) return;
+    const item = items.find((a) => a.id === dialog.id);
+    if (!item) return closeDialog();
+
+    // Reschedule: pumunta sa pagpili ng bagong date at time
+    if (dialog.type === "reschedule") {
+      const a = item.raw;
+      navigate("/book/date-time", {
+        state: {
+          reschedule: {
+            id: a.id,
+            reference: a.reference,
+            serviceId: a.service_id,
+            providerId: a.provider_id,
+            psychologistId: a.psychologist_user_id,
+            psychologist: a.psychologist,
+          },
+        },
+      });
+      return;
+    }
+
+    // Cancel
+    setBusy(true);
+    setDialogError("");
+    try {
+      await apiFetch(`/my-appointments/${item.raw.id}/cancel`, { method: "POST" });
+      await load();
+      closeDialog();
+    } catch (err) {
+      if (err.message?.includes("session expired")) return navigate("/signin");
+      setDialogError(err.message || "Could not cancel this appointment.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -243,7 +270,7 @@ export default function MyAppointments() {
                 </Link>
                 <Link
                   to="/contact"
-                  className="font-serif text-[15px] text-black/70 no-underline border-b border-transparent hover:border-current hover:text-black"
+                  className="border-b border-transparent font-serif text-[15px] text-black/70 no-underline hover:border-current hover:text-black"
                 >
                   Message the clinic
                 </Link>
@@ -261,11 +288,10 @@ export default function MyAppointments() {
                 <button
                   key={id}
                   type="button"
-                  className={`flex cursor-pointer items-center gap-2 rounded-lg border-0 px-5 py-2 font-serif text-[0.9rem] text-[#202020] ${
-                    tab === id
+                  className={`flex cursor-pointer items-center gap-2 rounded-lg border-0 px-5 py-2 font-serif text-[0.9rem] text-[#202020] ${tab === id
                       ? "bg-white font-bold shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
                       : "bg-transparent"
-                  }`}
+                    }`}
                   onClick={() => setTab(id)}
                 >
                   {label}
@@ -276,6 +302,16 @@ export default function MyAppointments() {
               ))}
             </div>
           </Reveal>
+
+          {loading && <p className="mb-6 text-sm text-[#666]">Loading your appointments…</p>}
+          {loadError && (
+            <p
+              role="alert"
+              className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+            >
+              {loadError}
+            </p>
+          )}
 
           <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-[1fr_300px]">
             <div>
@@ -297,7 +333,9 @@ export default function MyAppointments() {
                         />
                         <div>
                           <strong className="block text-[0.95rem]">{next.doctor}</strong>
-                          <small className="opacity-80">{next.dateLabel} · {next.time}</small>
+                          <small className="opacity-80">
+                            {next.dateLabel} · {next.time}
+                          </small>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -316,22 +354,24 @@ export default function MyAppointments() {
                     </div>
                     <div className="flex flex-col items-center gap-4 md:items-end">
                       <Countdown target={next.target} />
-                      <div className="flex gap-4">
-                        <button
-                          type="button"
-                          className="bg-transparent border-0 p-0 text-white text-sm underline cursor-pointer"
-                          onClick={() => setDialog({ type: "reschedule", id: next.id })}
-                        >
-                          Reschedule
-                        </button>
-                        <button
-                          type="button"
-                          className="bg-transparent border-0 p-0 text-white text-sm underline cursor-pointer"
-                          onClick={() => setDialog({ type: "cancel", id: next.id })}
-                        >
-                          Cancel
-                        </button>
-                      </div>
+                      {next.canChange && (
+                        <div className="flex gap-4">
+                          <button
+                            type="button"
+                            className="cursor-pointer border-0 bg-transparent p-0 text-sm text-white underline"
+                            onClick={() => setDialog({ type: "reschedule", id: next.id })}
+                          >
+                            Reschedule
+                          </button>
+                          <button
+                            type="button"
+                            className="cursor-pointer border-0 bg-transparent p-0 text-sm text-white underline"
+                            onClick={() => setDialog({ type: "cancel", id: next.id })}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </Reveal>
@@ -348,7 +388,7 @@ export default function MyAppointments() {
                   </h2>
 
                   {filtered.length === 0 ? (
-                    <EmptyState tab={tab} />
+                    !loading && <EmptyState tab={tab} />
                   ) : (
                     <div className="flex flex-col gap-5">
                       {filtered.map((apt) => (
@@ -392,15 +432,17 @@ export default function MyAppointments() {
                             </div>
                           </div>
 
-                          {apt.balance > 0 && (
+                          {apt.balance > 0 && apt.tab !== "cancelled" && (
                             <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
                               Remaining balance: ₱{apt.balance.toLocaleString()}
                             </p>
                           )}
 
-                          <p className="mb-5 rounded-lg bg-[#9ac5be]/24 px-4 py-3 text-[0.8rem]">
-                            {apt.message}
-                          </p>
+                          {apt.message && (
+                            <p className="mb-5 rounded-lg bg-[#9ac5be]/24 px-4 py-3 text-[0.8rem]">
+                              {apt.message}
+                            </p>
+                          )}
 
                           <div className="flex flex-wrap justify-center gap-4 md:justify-start">
                             <button
@@ -413,7 +455,7 @@ export default function MyAppointments() {
                             <Link to="/contact" className={cardLinkClass}>
                               Message
                             </Link>
-                            {apt.tab === "upcoming" && (
+                            {apt.canChange && (
                               <>
                                 <button
                                   type="button"
@@ -460,7 +502,10 @@ export default function MyAppointments() {
                 <p className="m-0 text-[0.8rem] text-[#666]">
                   Pick a service and a time that works for you.
                 </p>
-                <Link to="/book" className={`${btnSolid} mt-3 block w-full text-center no-underline`}>
+                <Link
+                  to="/book"
+                  className={`${btnSolid} mt-3 block w-full text-center no-underline`}
+                >
                   Book now
                 </Link>
               </div>
@@ -473,19 +518,24 @@ export default function MyAppointments() {
       {dialog && (
         <Dialog
           title={dialog.type === "cancel" ? "Cancel appointment?" : "Reschedule appointment?"}
-          confirmLabel={dialog.type === "cancel" ? "Yes, cancel" : "Request reschedule"}
+          confirmLabel={dialog.type === "cancel" ? "Yes, cancel" : "Choose new time"}
           danger={dialog.type === "cancel"}
-          onClose={() => setDialog(null)}
+          busy={busy}
+          error={dialogError}
+          onClose={closeDialog}
           onConfirm={confirmAction}
         >
           {dialog.type === "cancel" ? (
-            <p className="m-0">
-              This will move the appointment to Cancelled. You can book a new session anytime.
-            </p>
+            <>
+              <p className="m-0">Are you sure you want to cancel this appointment?</p>
+              <p className="mb-0 mt-2 font-bold text-red-700">
+                Your payment is non-refundable. This cannot be undone.
+              </p>
+            </>
           ) : (
             <p className="m-0">
-              We will mark this as a reschedule request and the clinic will contact you with new
-              available times.
+              You will pick a new date and time. Your current schedule stays until you confirm
+              the new one, then it becomes available to other clients.
             </p>
           )}
         </Dialog>
@@ -501,6 +551,7 @@ export default function MyAppointments() {
             <h3 className="m-0 font-serif text-xl">{details.service}</h3>
             <dl className="mt-4 grid gap-2 text-sm">
               {[
+                ["Reference", details.raw.reference],
                 ["Psychologist", details.doctor],
                 ["Date", details.dateLabel],
                 ["Time", details.time],
@@ -509,14 +560,21 @@ export default function MyAppointments() {
                 ["Payment", details.payment],
                 ["Balance", details.balance ? `₱${details.balance.toLocaleString()}` : "None"],
                 ["Consent", details.consent],
+                ...(details.raw.reschedule_count > 0
+                  ? [["Rescheduled", `${details.raw.reschedule_count}x`]]
+                  : []),
               ].map(([k, v]) => (
                 <div key={k} className="flex justify-between gap-3">
                   <dt className="text-[#666]">{k}</dt>
-                  <dd className="m-0 font-medium text-right">{v}</dd>
+                  <dd className="m-0 text-right font-medium">{v}</dd>
                 </div>
               ))}
             </dl>
-            <button type="button" className={`${btnSolid} mt-6 w-full`} onClick={() => setDetailsId(null)}>
+            <button
+              type="button"
+              className={`${btnSolid} mt-6 w-full`}
+              onClick={() => setDetailsId(null)}
+            >
               Close
             </button>
           </div>

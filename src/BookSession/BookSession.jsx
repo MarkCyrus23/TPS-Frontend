@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Navbar, Footer, Reveal, Photo, container, btnGhost, btnSolid } from "../components/Layout";
-import { SERVICES, PSYCHOLOGISTS } from "../data/clinic";
+import { Navbar, Footer, Reveal, container, btnGhost, btnSolid } from "../components/Layout";
+import { apiFetch } from "../auth";
+import { SERVICES } from "../data/clinic";
 import StepRail from "./StepRail";
 import BookingSummary from "./BookingSummary";
 import { useBooking } from "./bookingContext";
@@ -12,30 +14,154 @@ const gridClass =
 const panelClass =
   "bg-white border border-black/[0.23] rounded-[21px] p-7 max-[720px]:p-5";
 
-function AvatarFallback() {
+const CHECK_TIMEOUT_MS = 8000;
+
+// Kapag lumampas sa oras, itigil ang paghihintay
+const withTimeout = (promise, ms) =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
+  ]);
+
+/* ---------- Professional loading (skeleton) ---------- */
+const Bar = ({ className = "" }) => (
+  <div className={`animate-pulse rounded-md bg-[#e3ece8] ${className}`} />
+);
+
+function BookingSkeleton() {
   return (
-    <div className="absolute inset-0 bg-gradient-to-b from-[#d7eee8] to-[#eaf3ef]">
-      <span className="absolute top-[26%] left-1/2 w-[62px] h-[62px] rounded-full bg-tf-teal -translate-x-1/2" />
-      <span className="absolute -bottom-[30px] left-1/2 w-40 h-[140px] rounded-[50%_50%_0_0/60%_60%_0_0] bg-tf-teal -translate-x-1/2" />
+    <div className={pageShell} aria-busy="true" aria-live="polite">
+      <Navbar />
+      <main className={mainPad}>
+        <div className={container}>
+          {/* Heading */}
+          <Bar className="h-3 w-28" />
+          <Bar className="mt-4 h-9 w-[min(420px,80%)]" />
+
+          {/* Step rail */}
+          <div className="mt-6 flex items-center gap-3">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="flex flex-1 items-center gap-3">
+                <div className="size-8 shrink-0 animate-pulse rounded-full bg-[#d7eee8]" />
+                <Bar className="h-3 flex-1" />
+              </div>
+            ))}
+          </div>
+
+          <div className={gridClass}>
+            {/* Main panel */}
+            <div className={panelClass}>
+              <Bar className="h-6 w-48" />
+              <Bar className="mt-3 h-3 w-72 max-w-full" />
+
+              <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="rounded-[18px] border border-black/[0.12] p-5">
+                    <Bar className="h-2.5 w-16" />
+                    <Bar className="mt-4 h-5 w-3/4" />
+                    <Bar className="mt-3 h-3 w-full" />
+                    <Bar className="mt-2 h-3 w-5/6" />
+                    <Bar className="mt-5 h-2.5 w-2/3" />
+                    <Bar className="mt-2 h-2.5 w-1/2" />
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 flex items-center justify-between border-t border-dashed border-[#d0e5dd] pt-5">
+                <Bar className="h-10 w-24 rounded-lg" />
+                <Bar className="h-10 w-28 rounded-lg" />
+              </div>
+            </div>
+
+            {/* Summary */}
+            <div className={panelClass}>
+              <Bar className="h-3 w-24" />
+              <Bar className="mt-4 h-6 w-3/4" />
+              <div className="mt-6 grid gap-4">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="flex items-center justify-between gap-4">
+                    <Bar className="h-3 w-20" />
+                    <Bar className="h-3 w-24" />
+                  </div>
+                ))}
+              </div>
+              <Bar className="mt-8 h-10 w-full rounded-lg" />
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="mt-8 flex items-center justify-center gap-3 text-sm text-[#5b6b64]">
+            <span
+              className="size-5 animate-spin rounded-full border-2 border-[#cfe3dc] border-t-tf-teal"
+              aria-hidden="true"
+            />
+            <span>Checking your booking…</span>
+          </div>
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 }
 
 export default function BookSession() {
   const navigate = useNavigate();
-  const { booking, update, service, psychologist, summaryRows, feeLabel } = useBooking();
+  const { booking, update, service, summaryRows, feeLabel } = useBooking();
   const serviceId = booking.serviceId;
-  const doctorId = booking.psychologistId;
+
+  // Tinitingnan muna kung may booking na nasa approval stage
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+
+    withTimeout(apiFetch("/booking/active"), CHECK_TIMEOUT_MS)
+      .then((d) => {
+        if (!alive) return;
+        if (d.active) {
+          navigate("/book/approval", { replace: true });
+        } else {
+          setChecking(false);
+        }
+      })
+      .catch((err) => {
+        if (!alive) return;
+        if (err.message?.includes("session expired")) {
+          navigate("/signin");
+          return;
+        }
+        // timeout o error: ipakita pa rin ang booking page
+        setChecking(false);
+      });
+
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleServiceSelect = (id) => {
+    if (id === serviceId) return;
+    if (booking.holdId) {
+      apiFetch(`/booking/hold/${booking.holdId}`, { method: "DELETE" }).catch(() => { });
+    }
     update({
       serviceId: id,
       psychologistId: null,
-      bookingMode: id === "psychotherapy" ? booking.bookingMode : "schedule-first",
+      psychologist: null,
+      date: null,
+      time: null,
+      timeStart: null,
+      timeEnd: null,
+      holdId: null,
+      holdExpiresAt: null,
+      providerId: null,
     });
   };
 
-  const canContinue = serviceId && (serviceId !== "psychotherapy" || doctorId);
+  const canContinue = !!serviceId;
+
+  if (checking) return <BookingSkeleton />;
 
   return (
     <div className={pageShell}>
@@ -43,9 +169,7 @@ export default function BookSession() {
       <main className={mainPad}>
         <div className={container}>
           <Reveal>
-            <p className="m-0 text-[13px] font-bold tracking-[0.1em] text-tf-teal">
-              BOOK A SESSION
-            </p>
+            <p className="m-0 text-[13px] font-bold tracking-[0.1em] text-tf-teal">BOOK A SESSION</p>
             <h1 className="font-serif font-normal text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.15] my-2 mb-3 text-[#111]">
               Let&apos;s find a time <em className="text-tf-teal italic">that works for you.</em>
             </h1>
@@ -87,7 +211,10 @@ export default function BookSession() {
                       <p className="m-0 mt-2 text-sm leading-relaxed text-[#666]">{s.description}</p>
                       <ul className="m-0 mt-3 list-none p-0 space-y-1">
                         {s.details.map((d) => (
-                          <li key={d} className="text-xs text-tf-body before:content-['·'] before:mr-1.5 before:text-tf-teal">
+                          <li
+                            key={d}
+                            className="text-xs text-tf-body before:content-['·'] before:mr-1.5 before:text-tf-teal"
+                          >
                             {d}
                           </li>
                         ))}
@@ -99,64 +226,23 @@ export default function BookSession() {
 
               {!serviceId && (
                 <div className="mt-6 rounded-xl border border-dashed border-[#b6d2c4] bg-[#f9fcfb] px-5 py-8 text-center">
-                  <p className="m-0 font-serif text-base text-[#3d5c52]">
-                    No service selected yet
-                  </p>
+                  <p className="m-0 font-serif text-base text-[#3d5c52]">No service selected yet</p>
                   <p className="m-0 mt-1 text-sm text-[#666]">
                     Choose Psychotherapy, ABA Therapy, or Assessment to continue.
                   </p>
                 </div>
               )}
 
-              {serviceId && (
-                <div className="mt-8">
-                  <h3 className="text-[1.2rem] mb-4 mt-0 font-serif font-normal text-[#202020]">
-                    {serviceId === "psychotherapy"
-                      ? "Select a Psychologist"
-                      : "Psychologist Assignment"}
-                  </h3>
-                  {serviceId === "psychotherapy" ? (
-                    <ul className="list-none p-0 m-0 grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-[18px] max-[720px]:grid-cols-1">
-                      {PSYCHOLOGISTS.map((p) => (
-                        <li key={p.id}>
-                          <button
-                            type="button"
-                            className={[
-                              "w-full flex flex-col text-left bg-[#fdfdfd] border border-black/[0.23] rounded-[21px] overflow-hidden cursor-pointer p-0 transition-[border-color,transform,box-shadow] duration-200 relative hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(30,78,65,0.08)]",
-                              doctorId === p.id && "border-[3px] border-tf-teal",
-                            ]
-                              .filter(Boolean)
-                              .join(" ")}
-                            onClick={() => update({ psychologistId: p.id })}
-                          >
-                            <div className="aspect-[4/3] bg-[#eaf3ef] relative overflow-hidden">
-                              <Photo
-                                src={p.photo}
-                                alt={p.name}
-                                className="w-full h-full object-cover"
-                                fallback={<AvatarFallback />}
-                              />
-                            </div>
-                            <div className="px-[18px] pt-4 pb-5">
-                              <h3 className="m-0 mb-0.5 font-sans font-bold text-tf-teal text-[1.05rem]">
-                                {p.name}
-                              </h3>
-                              <p className="m-0 mb-3 text-[#666] text-[0.85rem]">{p.role}</p>
-                            </div>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <div className="bg-[#f9fcfb] p-6 rounded-xl border border-tf-teal text-tf-teal">
-                      <p className="m-0">
-                        You don&apos;t need to choose a psychologist for{" "}
-                        {service?.name}. We will automatically assign the best available specialist.
-                        No psychologist selector is shown for ABA Therapy or Assessment.
-                      </p>
-                    </div>
-                  )}
-                </div>
+              {serviceId === "psychotherapy" && (
+                <p className="mt-6 mb-0 rounded-xl border border-tf-teal/30 bg-[#f9fcfb] px-5 py-4 text-sm text-tf-body">
+                  In the next step, you can choose your psychologist first, or pick a schedule first
+                  and see who is available.
+                </p>
+              )}
+              {serviceId && serviceId !== "psychotherapy" && (
+                <p className="mt-6 mb-0 rounded-xl border border-tf-teal/30 bg-[#f9fcfb] px-5 py-4 text-sm text-tf-body">
+                  We will automatically assign the best available specialist for {service?.name}.
+                </p>
               )}
 
               <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-dashed border-[#d0e5dd] pt-5">

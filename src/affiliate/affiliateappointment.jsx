@@ -1,112 +1,87 @@
-import React, { useMemo, useState } from "react";
-import AdminNavigation from "./affiliatenav";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import AffiliateNavigation from "./affiliatenav";
+import ConsentViewer from "../components/ConsentViewer";
+import { apiFetch } from "../auth";
+import { peso, to12 } from "../components/payUtils";
 
 const FONT_CSS = `@import url('https://fonts.googleapis.com/css2?family=Inknut+Antiqua:wght@600&family=Inria+Serif:wght@400;700&family=Inter:wght@400;600;700&display=swap');`;
 
 const inter = "font-['Inter',Helvetica,sans-serif]";
 const serif = "font-['Inria_Serif',Georgia,serif]";
 
-/* ------------------------------------------------------------------ */
-/*  Data (sample — replace with your backend data)                     */
-/* ------------------------------------------------------------------ */
-const DAYS = [
-    { key: "today", title: "TODAY", n: 15, dow: "THU" },
-    { key: "tomorrow", title: "TOMORROW", n: 16, dow: "FRI" },
-    { key: "sunday", title: "SUNDAY, OCTOBER 18", n: 18, dow: "SUN" },
-];
+const API_BASE = "/affiliate";
+const PAYMENT_PATH = "/affiliate/payment";
 
-// chip = status badge, steps = progress of Requested / Accepted / Paid / Done
+/* ------------------------------------------------------------------ */
+/*  Config                                                             */
+/* ------------------------------------------------------------------ */
+const STEP_LABELS = ["Paid", "Approved", "Done"];
+
 const STATUS = {
-    pending: { chip: "Pending", cls: "bg-[#fdf1bc] text-[#7a5d00]", steps: ["current", "todo", "todo", "todo"] },
-    awaiting: { chip: "Awaiting payment", cls: "bg-[#fde3d6] text-[#a4492a]", steps: ["done", "done", "current", "todo"] },
-    verify: { chip: "Verify payment", cls: "bg-[#fdf1bc] text-[#7a5d00]", steps: ["done", "done", "warn", "todo"] },
-    confirmed: { chip: "Confirmed", cls: "bg-[#a9d0c8] text-[#1f4d3f]", steps: ["done", "done", "done", "todo"] },
-    completed: { chip: "Completed", cls: "bg-[#e6e6e6] text-[#555]", steps: ["done", "done", "done", "done"] },
+    verify: { chip: "Verify payment", cls: "bg-[#fdf1bc] text-[#7a5d00]", steps: ["warn", "todo", "todo"] },
+    pending: { chip: "Pending approval", cls: "bg-[#fde3d6] text-[#a4492a]", steps: ["done", "current", "todo"] },
+    approved: { chip: "Approved", cls: "bg-[#a9d0c8] text-[#1f4d3f]", steps: ["done", "done", "current"] },
+    completed: { chip: "Completed", cls: "bg-[#e6e6e6] text-[#555]", steps: ["done", "done", "done"] },
+    declined: { chip: "Declined", cls: "bg-red-100 text-red-700", steps: ["done", "todo", "todo"] },
 };
 
 const FILTERS = [
     ["all", "All upcoming"],
-    ["pending", "Pending"],
-    ["awaiting", "Awaiting payment"],
     ["verify", "To verify"],
-    ["confirmed", "Confirmed"],
+    ["pending", "Pending approval"],
+    ["approved", "Approved"],
     ["completed", "Completed"],
+    ["declined", "Declined"],
 ];
-
-const STEP_LABELS = ["Requested", "Accepted", "Paid", "Done"];
-
-const PRICE = { "Psychotherapy / Counseling": "₱1,500", "ABA Therapy": "₱1,200", "Assessment & Consultation": "₱2,000" };
-const fmt = (h) => `${h % 12 || 12}:00 ${h < 12 ? "AM" : "PM"}`;
-const slot = (h) => `${fmt(h)} – ${fmt(h + 1)}`;
-
-const PSY = "Psychotherapy / Counseling";
-const ABA = "ABA Therapy";
-const ASM = "Assessment & Consultation";
-
-const RAW = [
-    ["today", "Juan Delacruz", PSY, 9, "Online", "pending"],
-    ["today", "Maria Santos", ABA, 11, "In-person", "confirmed"],
-    ["today", "Carlo Bautista", PSY, 15, "Online", "completed"],
-    ["tomorrow", "Juan Delacruz", PSY, 9, "Online", "confirmed"],
-    ["tomorrow", "Bea Garcia", PSY, 10, "Online", "pending"],
-    ["tomorrow", "Rica Lim", ASM, 14, "In-person", "awaiting"],
-    ["sunday", "Juan Delacruz", PSY, 9, "Online", "confirmed"],
-    ["sunday", "Juan Delacruz", PSY, 13, "Online", "verify"],
-    ["sunday", "Kim Aquino", PSY, 10, "Online", "pending"],
-    ["sunday", "Liza Mendoza", ABA, 14, "In-person", "awaiting"],
-    ["sunday", "Noel Ramos", PSY, 15, "Online", "verify"],
-    ["sunday", "Leo Flores", ABA, 16, "In-person", "confirmed"],
-    ["tomorrow", "Paolo Cruz", PSY, 16, "Online", "verify"],
-    ["today", "Ana Reyes", ASM, 8, "Online", "completed"],
-    ["tomorrow", "Joy Pascual", ABA, 11, "In-person", "completed"],
-];
-
-const INITIAL = RAW.map(([day, name, service, h, mode, status], i) => {
-    const id = i + 1;
-    const [first, last = ""] = name.toLowerCase().split(" ");
-    return {
-        id, day, name, service, mode, status,
-        time: slot(h),
-        email: `${first}.${last[0] || "x"}@email.com`,
-        phone: `0917 111 22${String(id).padStart(2, "0")}`,
-        emergency: `0922 345 67${String(id).padStart(2, "0")}`,
-        ref: `Ref: ${String(id).padStart(4, "0")}`,
-        price: PRICE[service],
-    };
-});
 
 /* ------------------------------------------------------------------ */
 /*  Building blocks                                                    */
 /* ------------------------------------------------------------------ */
-const Header = () => (
-    <header className="flex items-start justify-between">
-        <div>
-            <div className={`${inter} text-[20px] font-bold tracking-[4.2px] text-[#4a9b8e]`}>APPOINTMENT</div>
-            <h1 className={`${serif} mt-[8px] text-[40px] font-bold leading-[1.15] text-[#2f4a42]`}>Everyone who booked with you.</h1>
-        </div>
-        <div className="flex items-center gap-[17px]">
-            <div className="flex h-[30px] w-[170px] items-center justify-center rounded-[6px] border border-[#4a9b8e] bg-[#e3f2ee]">
-                <span className={`${inter} text-[12px] font-bold text-[#2a8570]`}>Thursday, October 15</span>
+const Header = () => {
+    const todayLabel = new Date().toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+    });
+    return (
+        <header className="flex items-start justify-between">
+            <div>
+                <div className={`${inter} text-[20px] font-bold tracking-[4.2px] text-[#4a9b8e]`}>APPOINTMENT</div>
+                <h1 className={`${serif} mt-[8px] text-[40px] font-bold leading-[1.15] text-[#2f4a42]`}>
+                    Everyone who booked with you.
+                </h1>
             </div>
-            <button aria-label="Notifications" className="relative flex h-[37px] w-[46px] items-center justify-center rounded-[8px] border border-[#c7b6b6] bg-white">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2a8570" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M13.7 21a2 2 0 0 1-3.4 0" />
-                </svg>
-                <span className="absolute right-[10px] top-[8px] h-[7px] w-[7px] rounded-full bg-[#e07b6a]" />
-            </button>
-        </div>
-    </header>
-);
+            <div className="flex items-center gap-[17px]">
+                <div className="flex h-[30px] min-w-[170px] items-center justify-center rounded-[6px] border border-[#4a9b8e] bg-[#e3f2ee] px-3">
+                    <span className={`${inter} text-[12px] font-bold text-[#2a8570]`}>{todayLabel}</span>
+                </div>
+                <button
+                    type="button"
+                    aria-label="Notifications"
+                    className="relative flex h-[37px] w-[46px] items-center justify-center rounded-[8px] border border-[#c7b6b6] bg-white"
+                >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2a8570" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+                        <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+                    </svg>
+                </button>
+            </div>
+        </header>
+    );
+};
 
 const Stepper = ({ steps }) => (
     <div className="flex items-start" aria-label="Appointment progress">
         {steps.map((st, i) => (
             <React.Fragment key={STEP_LABELS[i]}>
                 {i > 0 && (
-                    <span className={`mt-[11px] h-px w-[34px] ${steps[i - 1] === "done" && st !== "todo" ? "bg-[#4a9b8e]" : "bg-[#b9b9b9]"}`} />
+                    <span
+                        className={`mt-[11px] h-px w-[34px] ${steps[i - 1] === "done" && st !== "todo" ? "bg-[#4a9b8e]" : "bg-[#b9b9b9]"
+                            }`}
+                    />
                 )}
-                <div className="flex w-[22px] flex-col items-center">
+                <div className="flex w-[40px] flex-col items-center">
                     <span
                         className={`flex h-[22px] w-[22px] items-center justify-center rounded-full border ${st === "done"
                                 ? "border-[#4a9b8e] bg-[#4a9b8e]"
@@ -123,7 +98,10 @@ const Stepper = ({ steps }) => (
                             </svg>
                         )}
                     </span>
-                    <span className={`${serif} mt-[4px] whitespace-nowrap text-[9px] font-bold ${st === "todo" ? "text-[#9a9a9a]" : "text-[#202020]"}`}>
+                    <span
+                        className={`${serif} mt-[4px] whitespace-nowrap text-[9px] font-bold ${st === "todo" ? "text-[#9a9a9a]" : "text-[#202020]"
+                            }`}
+                    >
                         {STEP_LABELS[i]}
                     </span>
                 </div>
@@ -132,8 +110,13 @@ const Stepper = ({ steps }) => (
     </div>
 );
 
+// Placeholder lang: wala pang integration ang messaging
 const MessageBtn = () => (
-    <button className={`${serif} flex h-[26px] items-center gap-[6px] rounded-[5px] border border-[#00000024] bg-[#a9d0c8] px-[12px] text-[11px] text-[#202020] hover:bg-[#98c5bc]`}>
+    <button
+        type="button"
+        title="Messaging is coming soon"
+        className={`${serif} flex h-[26px] cursor-pointer items-center gap-[6px] rounded-[5px] border border-[#00000024] bg-[#a9d0c8] px-[12px] text-[11px] text-[#202020] hover:bg-[#98c5bc]`}
+    >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#202020" strokeWidth="2" strokeLinejoin="round">
             <path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12Z" />
         </svg>
@@ -141,29 +124,49 @@ const MessageBtn = () => (
     </button>
 );
 
-const PrimaryBtn = ({ children, onClick }) => (
-    <button onClick={onClick} className={`${serif} h-[26px] rounded-[5px] bg-[#11a086] px-[14px] text-[11px] text-white hover:bg-[#0e8c75]`}>
+const PrimaryBtn = ({ children, onClick, disabled }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className={`${serif} h-[26px] cursor-pointer rounded-[5px] border-0 bg-[#11a086] px-[14px] text-[11px] text-white hover:bg-[#0e8c75] disabled:cursor-not-allowed disabled:opacity-60`}
+    >
         {children}
     </button>
 );
 
-const AppointmentCard = ({ a, open, onToggle, setStatus, remove }) => {
-    const s = STATUS[a.status];
-    const day = DAYS.find((d) => d.key === a.day);
+const ConsentChip = ({ status }) => {
+    if (status === "not_required") return null;
+    const done = status === "submitted";
+    return (
+        <span
+            className={`${serif} ml-[8px] inline-flex h-[18px] items-center rounded-full px-[8px] text-[10px] font-bold ${done ? "bg-[#e3f2ee] text-[#2a8570]" : "bg-[#fdf1bc] text-[#7a5d00]"
+                }`}
+        >
+            {done ? "Consent submitted" : "Consent waiting"}
+        </span>
+    );
+};
+
+const AppointmentCard = ({ a, open, onToggle, busy, onApprove, onDecline, onComplete, onVerify, onViewConsent }) => {
+    const s = STATUS[a.state] || STATUS.pending;
+    const d = new Date(a.date + "T00:00");
+
     return (
         <article className="rounded-[10px] border border-[#c7b6b6] bg-white px-[24px] pb-[16px] pt-[20px]">
             <div className="flex items-center">
                 {/* date block */}
                 <div className={`${serif} flex h-[68px] w-[62px] shrink-0 flex-col items-center justify-center rounded-[6px] bg-[#a9d0c8] leading-[1.15] text-[#1f4d3f]`}>
-                    <span className="text-[17px] font-bold">{day.n}</span>
-                    <span className="text-[10px]">{day.dow}</span>
-                    <span className="text-[10px]">Oct</span>
+                    <span className="text-[17px] font-bold">{d.getDate()}</span>
+                    <span className="text-[10px]">{d.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase()}</span>
+                    <span className="text-[10px]">{d.toLocaleDateString("en-US", { month: "short" })}</span>
                 </div>
 
                 <div className="ml-[22px] flex-1">
-                    <div className={`${serif} text-[15px] font-bold text-[#202020]`}>{a.name}</div>
+                    <div className={`${serif} text-[15px] font-bold text-[#202020]`}>{a.client_name || "Client"}</div>
                     <div className={`${serif} mt-[2px] text-[13px] text-[#444]`}>
-                        {a.service} · {a.time} · {a.mode}
+                        {a.service_name} · {to12(a.start_time)} – {to12(a.end_time)}
+                        <ConsentChip status={a.consent_status} />
                     </div>
                 </div>
 
@@ -176,9 +179,10 @@ const AppointmentCard = ({ a, open, onToggle, setStatus, remove }) => {
 
             <div className="mt-[18px] flex items-center justify-between border-t border-[#e8e8e8] pt-[14px]">
                 <button
+                    type="button"
                     onClick={onToggle}
                     aria-expanded={open}
-                    className={`${serif} flex items-center gap-[4px] text-[11px] font-bold text-[#222b28] underline`}
+                    className={`${serif} flex cursor-pointer items-center gap-[4px] border-0 bg-transparent p-0 text-[11px] font-bold text-[#222b28] underline`}
                 >
                     {open ? "Hide details" : "Client details"}
                     {open && (
@@ -189,37 +193,89 @@ const AppointmentCard = ({ a, open, onToggle, setStatus, remove }) => {
                 </button>
 
                 <div className="flex items-center gap-[8px]">
-                    {a.status === "pending" && (
+                    {a.state === "pending" && (
                         <button
-                            onClick={() => remove(a.id)}
-                            className={`${serif} h-[26px] rounded-[5px] border border-[#ff4c4c75] bg-white px-[14px] text-[11px] text-[#ff5656] hover:bg-[#fff1f1]`}
+                            type="button"
+                            disabled={busy}
+                            onClick={onDecline}
+                            className={`${serif} h-[26px] cursor-pointer rounded-[5px] border border-[#ff4c4c75] bg-white px-[14px] text-[11px] text-[#ff5656] hover:bg-[#fff1f1] disabled:cursor-not-allowed disabled:opacity-60`}
                         >
                             Decline
                         </button>
                     )}
+                    {a.consent_status === "submitted" && (
+                        <button
+                            type="button"
+                            onClick={onViewConsent}
+                            className={`${serif} h-[26px] cursor-pointer rounded-[5px] border border-[#4a9b8e] bg-white px-[12px] text-[11px] text-[#2a8570] hover:bg-[#e3f2ee]`}
+                        >
+                            View consent form
+                        </button>
+                    )}
                     <MessageBtn />
-                    {a.status === "pending" && <PrimaryBtn onClick={() => setStatus(a.id, "awaiting")}>Accept</PrimaryBtn>}
-                    {a.status === "verify" && <PrimaryBtn onClick={() => setStatus(a.id, "confirmed")}>Review payment</PrimaryBtn>}
+                    {a.state === "verify" && <PrimaryBtn onClick={onVerify}>Verify payment</PrimaryBtn>}
+                    {a.state === "pending" && (
+                        <PrimaryBtn disabled={busy} onClick={onApprove}>
+                            {busy ? "Please wait…" : "Approve"}
+                        </PrimaryBtn>
+                    )}
+                    {a.state === "approved" && (
+                        <PrimaryBtn disabled={busy} onClick={onComplete}>
+                            {busy ? "Please wait…" : "Mark as done"}
+                        </PrimaryBtn>
+                    )}
                 </div>
             </div>
+
+            {a.state === "declined" && a.decline_reason && (
+                <p className={`${serif} mb-0 mt-[10px] text-[12px] text-red-700`}>Reason: {a.decline_reason}</p>
+            )}
 
             {open && (
                 <div className="mt-[14px] grid grid-cols-3 gap-[24px] rounded-[6px] border border-[#c9d9d4] bg-[#e8f1ee] px-[24px] py-[18px]">
                     <div>
                         <div className={`${serif} text-[12px] font-bold text-[#202020]`}>Contact</div>
-                        <div className={`${serif} mt-[6px] text-[12px] leading-[16px] text-[#444]`}>
-                            {a.email}<br />{a.phone}<br />{a.mode} session
+                        <div className={`${serif} mt-[6px] break-all text-[12px] leading-[16px] text-[#444]`}>
+                            {a.client_email || "—"}
+                            <br />
+                            {a.client_mobile || "—"}
+                            {a.birthdate && (
+                                <>
+                                    <br />
+                                    Born{" "}
+                                    {new Date(a.birthdate + "T00:00").toLocaleDateString("en-US", {
+                                        month: "short",
+                                        day: "numeric",
+                                        year: "numeric",
+                                    })}
+                                </>
+                            )}
                         </div>
                     </div>
                     <div>
                         <div className={`${serif} text-[12px] font-bold text-[#202020]`}>Booking</div>
                         <div className={`${serif} mt-[6px] text-[12px] leading-[16px] text-[#444]`}>
-                            {a.ref}<br />{a.service}<br />{a.price}
+                            Ref: {a.reference}
+                            <br />
+                            {a.service_name}
+                            <br />
+                            Paid {peso(a.amount_paid)} of {peso(a.total_amount)}
+                            {a.balance > 0 && (
+                                <>
+                                    <br />
+                                    Balance {peso(a.balance)}
+                                </>
+                            )}
                         </div>
                     </div>
                     <div>
                         <div className={`${serif} text-[12px] font-bold text-[#202020]`}>Emergency Contact</div>
-                        <div className={`${serif} mt-[6px] text-[12px] leading-[16px] text-[#444]`}>{a.emergency}</div>
+                        <div className={`${serif} mt-[6px] text-[12px] leading-[16px] text-[#444]`}>
+                            {a.emergency_name || "—"}
+                            {a.emergency_relation ? ` (${a.emergency_relation})` : ""}
+                            <br />
+                            {a.emergency_phone || "—"}
+                        </div>
                     </div>
                 </div>
             )}
@@ -237,14 +293,46 @@ const DayHeading = ({ children }) => (
 /* ------------------------------------------------------------------ */
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
-export default function Appointment() {
-    const [items, setItems] = useState(INITIAL);
+export default function AffiliateAppointment() {
+    const navigate = useNavigate();
+    const [items, setItems] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
     const [filter, setFilter] = useState("all");
     const [query, setQuery] = useState("");
-    const [openIds, setOpenIds] = useState(() => new Set([1]));
+    const [openIds, setOpenIds] = useState(() => new Set());
+    const [busyId, setBusyId] = useState(null);
+    const [viewing, setViewing] = useState(null);
 
-    const setStatus = (id, status) => setItems((p) => p.map((a) => (a.id === id ? { ...a, status } : a)));
-    const remove = (id) => setItems((p) => p.filter((a) => a.id !== id));
+    useEffect(() => {
+        apiFetch(`${API_BASE}/appointments`)
+            .then((d) => setItems(d.appointments || []))
+            .catch((err) => setError(err.message || "Could not load appointments."))
+            .finally(() => setLoading(false));
+    }, []);
+
+    const act = async (id, kind, body) => {
+        setError("");
+        setBusyId(id);
+        try {
+            const d = await apiFetch(`${API_BASE}/appointments/${id}/${kind}`, {
+                method: "POST",
+                body: JSON.stringify(body || {}),
+            });
+            setItems((l) => l.map((a) => (a.id === id ? d.appointment : a)));
+        } catch (err) {
+            setError(err.message || "Something went wrong.");
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+    const onDecline = (a) => {
+        const reason = window.prompt(`Decline ${a.client_name}'s appointment? Add a reason (optional):`);
+        if (reason === null) return;
+        act(a.id, "decline", { reason: reason.trim() || null });
+    };
+
     const toggle = (id) =>
         setOpenIds((prev) => {
             const next = new Set(prev);
@@ -253,24 +341,45 @@ export default function Appointment() {
         });
 
     const counts = useMemo(() => {
-        const c = { all: items.filter((a) => a.status !== "completed").length };
-        FILTERS.slice(1).forEach(([k]) => (c[k] = items.filter((a) => a.status === k).length));
+        const c = { all: items.filter((a) => a.state !== "completed" && a.state !== "declined").length };
+        FILTERS.slice(1).forEach(([k]) => (c[k] = items.filter((a) => a.state === k).length));
         return c;
     }, [items]);
 
     const visible = useMemo(() => {
         const q = query.trim().toLowerCase();
         return items.filter((a) => {
-            const byStatus = filter === "all" ? a.status !== "completed" : a.status === filter;
-            return byStatus && (!q || a.name.toLowerCase().includes(q));
+            const byStatus =
+                filter === "all" ? a.state !== "completed" && a.state !== "declined" : a.state === filter;
+            return byStatus && (!q || (a.client_name || "").toLowerCase().includes(q));
         });
     }, [items, filter, query]);
+
+    const groups = useMemo(() => {
+        const today = new Date();
+        const tomorrow = new Date(Date.now() + 86400000);
+        const map = new Map();
+        visible.forEach((a) => {
+            const d = new Date(a.date + "T00:00");
+            const label =
+                d.toDateString() === today.toDateString()
+                    ? "TODAY"
+                    : d.toDateString() === tomorrow.toDateString()
+                        ? "TOMORROW"
+                        : d
+                            .toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
+                            .toUpperCase();
+            if (!map.has(a.date)) map.set(a.date, { label, items: [] });
+            map.get(a.date).items.push(a);
+        });
+        return [...map.entries()].sort(([x], [y]) => (x < y ? -1 : 1)).map(([, g]) => g);
+    }, [visible]);
 
     return (
         <div className="flex min-h-screen w-full min-w-[1440px] bg-[#f2f2f2] antialiased">
             <style>{FONT_CSS}</style>
 
-            <AdminNavigation />
+            <AffiliateNavigation />
 
             <main className="flex-1 px-[36px] pb-[60px] pt-[51px]">
                 <Header />
@@ -282,9 +391,10 @@ export default function Appointment() {
                         return (
                             <button
                                 key={key}
+                                type="button"
                                 onClick={() => setFilter(key)}
                                 aria-pressed={active}
-                                className={`h-[84px] rounded-tl-[18px] rounded-tr-[7px] rounded-br-[18px] rounded-bl-[7px] border border-[#2020203d] px-[19px] pt-[9px] text-left transition-colors ${active ? "bg-[#4a9b8e78]" : "bg-white hover:bg-[#4a9b8e22]"
+                                className={`h-[84px] cursor-pointer rounded-tl-[18px] rounded-tr-[7px] rounded-br-[18px] rounded-bl-[7px] border border-[#2020203d] px-[19px] pt-[9px] text-left transition-colors ${active ? "bg-[#4a9b8e78]" : "bg-white hover:bg-[#4a9b8e22]"
                                     }`}
                             >
                                 <div className={`${serif} text-[24px] font-bold leading-[1.2] text-[#2f4a42]`}>{counts[key]}</div>
@@ -309,37 +419,49 @@ export default function Appointment() {
                     />
                 </label>
 
+                {error && (
+                    <p className="mb-0 mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                        {error}
+                    </p>
+                )}
+
                 {/* Day groups */}
                 <div className="mt-[26px]">
-                    {DAYS.map((d) => {
-                        const list = visible.filter((a) => a.day === d.key);
-                        if (list.length === 0) return null;
-                        return (
-                            <section key={d.key} className="mb-[8px]">
-                                <DayHeading>{d.title}</DayHeading>
-                                <div className="mt-[16px] flex flex-col gap-[22px]">
-                                    {list.map((a) => (
-                                        <AppointmentCard
-                                            key={a.id}
-                                            a={a}
-                                            open={openIds.has(a.id)}
-                                            onToggle={() => toggle(a.id)}
-                                            setStatus={setStatus}
-                                            remove={remove}
-                                        />
-                                    ))}
-                                </div>
-                            </section>
-                        );
-                    })}
+                    {loading && <p className={`${serif} text-sm text-[#666]`}>Loading appointments…</p>}
 
-                    {visible.length === 0 && (
+                    {groups.map((g) => (
+                        <section key={g.label} className="mb-[8px]">
+                            <DayHeading>{g.label}</DayHeading>
+                            <div className="mt-[16px] flex flex-col gap-[22px]">
+                                {g.items.map((a) => (
+                                    <AppointmentCard
+                                        key={a.id}
+                                        a={a}
+                                        open={openIds.has(a.id)}
+                                        onToggle={() => toggle(a.id)}
+                                        busy={busyId === a.id}
+                                        onApprove={() => act(a.id, "approve")}
+                                        onDecline={() => onDecline(a)}
+                                        onComplete={() => act(a.id, "complete")}
+                                        onVerify={() => navigate(PAYMENT_PATH)}
+                                        onViewConsent={() => setViewing(a)}
+                                    />
+                                ))}
+                            </div>
+                        </section>
+                    ))}
+
+                    {!loading && visible.length === 0 && (
                         <div className={`${serif} rounded-[10px] border border-[#c7b6b6] bg-white px-[28px] py-[56px] text-center text-[14px] text-[#666]`}>
-                            No appointments match. Try another status or clear the search.
+                            {items.length === 0
+                                ? "No appointments yet. They appear here once a client has paid."
+                                : "No appointments match. Try another status or clear the search."}
                         </div>
                     )}
                 </div>
             </main>
+
+            {viewing && <ConsentViewer base={API_BASE} appointment={viewing} onClose={() => setViewing(null)} />}
         </div>
     );
 }

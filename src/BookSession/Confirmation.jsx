@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Navbar,
   Footer,
@@ -7,6 +8,8 @@ import {
   btnSolid,
   btnGhost,
 } from "../components/Layout";
+import { apiFetch } from "../auth";
+import { peso, to12 } from "../components/payUtils";
 import { CLINIC } from "../data/clinic";
 import StepRail from "./StepRail";
 import BookingSummary from "./BookingSummary";
@@ -19,22 +22,116 @@ const gridClass =
 const panelClass =
   "bg-white border border-black/[0.23] rounded-[21px] p-7 max-[720px]:p-5";
 
-export default function Confirmation() {
-  const {
-    booking,
-    service,
-    psychologist,
-    dateLongLabel,
-    dateLabel,
-    summaryRows,
-    feeLabel,
-    fee,
-  } = useBooking();
+// "2026-10-30" -> Date (local time, no timezone shift)
+const parseDate = (iso) => {
+  if (!iso) return null;
+  const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
+const t12 = (t) => (t ? to12(String(t).slice(0, 5)) : "");
 
-  const ref =
-    booking.referenceNumber || `TF-${Date.now().toString().slice(-8)}`;
-  const paid = booking.payment.amountPaid || fee;
-  const remaining = booking.payment.remaining || 0;
+export default function Confirmation() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [params, setParams] = useSearchParams();
+  const { booking, update } = useBooking();
+
+  // Reference comes from the URL (survives refresh) or from the booking flow
+  const ref = params.get("ref") || booking.referenceNumber || "";
+
+  const [appt, setAppt] = useState(null);
+  const [loading, setLoading] = useState(!!ref);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!ref) {
+      setLoading(false);
+      return;
+    }
+    let alive = true;
+    setLoading(true);
+    setError("");
+    apiFetch(`/booking/confirmation?${new URLSearchParams({ reference: ref })}`)
+      .then((d) => {
+        if (!alive) return;
+        setAppt(d.appointment);
+        // keep the reference in the URL so a page refresh still works
+        if (!params.get("ref")) setParams({ ref }, { replace: true });
+      })
+      .catch((err) => {
+        if (!alive) return;
+        if (err.message?.includes("session expired")) {
+          return navigate("/signin", {
+            state: { from: location.pathname + location.search },
+          });
+        }
+        setError(err.message || "Could not load your appointment.");
+      })
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ref]);
+
+  const confirmed = String(appt?.status || "").toUpperCase() === "CONFIRMED";
+  useEffect(() => {
+    if (!appt?.id || !confirmed) return;
+    let alive = true;
+
+    apiFetch(`/booking/payments/${appt.id}/finish`, { method: "POST" })
+      .then(() => {
+        if (!alive) return;
+        update({
+          serviceId: null,
+          psychologistId: null,
+          psychologist: null,
+          date: null,
+          time: null,
+          timeStart: null,
+          timeEnd: null,
+          holdId: null,
+          holdExpiresAt: null,
+          providerId: null,
+          approvalStatus: null,
+        });
+      })
+      .catch(() => { });
+
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appt?.id, confirmed]);
+
+  const dateObj = parseDate(appt?.date);
+  const dateLong = dateObj
+    ? dateObj.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    })
+    : "—";
+  const dateShort = dateObj
+    ? dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    : "";
+  const timeText = appt?.start_time
+    ? `${t12(appt.start_time)}${appt.end_time ? ` - ${t12(appt.end_time)}` : ""}`
+    : "—";
+
+  const paid = Number(appt?.payment?.amount_paid || 0);
+  const remaining = Number(appt?.payment?.balance || 0);
+  const total = paid + remaining;
+
+  const serviceName = appt?.service?.full_name || appt?.service?.name || "—";
+  const psychName = appt?.psychologist?.name || "To be assigned";
+
+  const summaryRows = [
+    { label: "SERVICE", value: appt?.service?.name || "—" },
+    { label: "PSYCHOLOGIST", value: psychName },
+    { label: "DATE & TIME", value: dateObj ? `${dateShort} · ${timeText}` : "—" },
+  ];
 
   return (
     <div className={pageShell}>
@@ -46,107 +143,163 @@ export default function Confirmation() {
           </Reveal>
           <div className={gridClass}>
             <Reveal className={panelClass} delay={140}>
-              <div className="mb-6 flex size-14 items-center justify-center rounded-full bg-tf-soft text-2xl text-tf-teal">
-                ✓
-              </div>
-              <header>
-                <h2 className="m-0 mb-2 font-serif text-[1.6rem] font-normal text-[#202020]">
-                  Appointment confirmed
-                </h2>
-                <p className="m-0 text-sm text-[#666]">
-                  A confirmation was sent to{" "}
-                  <strong>{booking.client.email || "your email"}</strong>. We look forward to seeing
-                  you.
-                </p>
-              </header>
+              {loading && (
+                <p className="m-0 text-sm text-[#666]">Loading your appointment…</p>
+              )}
 
-              <div className="mt-6 rounded-2xl border border-black/10 bg-[#fbfdfc] p-5">
-                <p className="m-0 text-[11px] font-bold tracking-[0.12em] text-tf-teal">
-                  REFERENCE NUMBER
-                </p>
-                <p className="m-0 mt-1 font-serif text-2xl tracking-wide text-tf-ink">{ref}</p>
+              {!loading && !ref && (
+                <div className="rounded-xl border border-dashed border-[#b6d2c4] bg-[#f9fcfb] px-5 py-8 text-center">
+                  <p className="m-0 font-serif text-base text-[#3d5c52]">No booking found</p>
+                  <p className="m-0 mt-1 text-sm text-[#666]">
+                    Start a booking first, or check your appointments.
+                  </p>
+                  <div className="mt-5 flex flex-wrap justify-center gap-3">
+                    <Link to="/book" className={btnSolid}>
+                      Book a session
+                    </Link>
+                    <Link to="/appointments" className={btnGhost}>
+                      My Appointments
+                    </Link>
+                  </div>
+                </div>
+              )}
 
-                <dl className="m-0 mt-5 grid gap-3 border-t border-dashed border-[#d0e5dd] pt-4 text-sm">
-                  <div className="flex justify-between gap-3">
-                    <dt className="text-[#666]">Service</dt>
-                    <dd className="m-0 text-right font-medium">
-                      {service?.fullName || service?.name || "—"}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-3">
-                    <dt className="text-[#666]">Psychologist</dt>
-                    <dd className="m-0 text-right font-medium">
-                      {psychologist?.name || "To be assigned"}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-3">
-                    <dt className="text-[#666]">Date</dt>
-                    <dd className="m-0 text-right font-medium">{dateLongLabel}</dd>
-                  </div>
-                  <div className="flex justify-between gap-3">
-                    <dt className="text-[#666]">Time</dt>
-                    <dd className="m-0 text-right font-medium">{booking.time || "—"}</dd>
-                  </div>
-                  <div className="flex justify-between gap-3">
-                    <dt className="text-[#666]">Session format</dt>
-                    <dd className="m-0 text-right font-medium">
-                      To be determined by psychologist
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-3">
-                    <dt className="text-[#666]">Amount paid</dt>
-                    <dd className="m-0 text-right font-medium">₱{paid.toLocaleString()}</dd>
-                  </div>
-                  {remaining > 0 && (
-                    <div className="flex justify-between gap-3">
-                      <dt className="text-[#666]">Remaining balance</dt>
-                      <dd className="m-0 text-right font-medium text-amber-800">
-                        ₱{remaining.toLocaleString()} (due after session)
-                      </dd>
-                    </div>
-                  )}
-                  <div className="flex justify-between gap-3">
-                    <dt className="text-[#666]">Consent form</dt>
-                    <dd className="m-0 text-right font-medium">
-                      {booking.consentComplete ? "Completed" : "Pending"}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-
-              <p className="mt-5 text-sm leading-relaxed text-tf-body">
-                Clinic location:{" "}
-                <a
-                  href={`https://maps.google.com/?q=${encodeURIComponent(CLINIC.address)}`}
-                  className="font-medium text-tf-teal no-underline hover:underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
+              {!loading && error && (
+                <p
+                  role="alert"
+                  className="m-0 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
                 >
-                  {CLINIC.address}
-                </a>
-                . Please arrive 10 minutes early for in-person sessions once the format is confirmed.
-              </p>
+                  {error}
+                </p>
+              )}
 
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link to="/" className={btnGhost}>
-                  Back to Home
-                </Link>
-                <Link to="/appointments" className={btnSolid}>
-                  View My Appointments
-                </Link>
-              </div>
+              {!loading && appt && (
+                <>
+                  <div
+                    className={`mb-6 flex size-14 items-center justify-center rounded-full text-2xl ${confirmed ? "bg-tf-soft text-tf-teal" : "bg-amber-50 text-amber-700"
+                      }`}
+                  >
+                    {confirmed ? "✓" : "…"}
+                  </div>
+                  <header>
+                    <h2 className="m-0 mb-2 font-serif text-[1.6rem] font-normal text-[#202020]">
+                      {confirmed ? "Appointment confirmed" : "Booking received"}
+                    </h2>
+                    <p className="m-0 text-sm text-[#666]">
+                      {confirmed ? (
+                        <>
+                          Your appointment is booked under{" "}
+                          <strong>{appt.client?.email || "your account"}</strong>. We look forward to
+                          seeing you.
+                        </>
+                      ) : (
+                        <>
+                          Your booking is not confirmed yet. Current status:{" "}
+                          <strong>{String(appt.status || "pending").replace(/_/g, " ").toLowerCase()}</strong>
+                          .{" "}
+                          <Link to="/book/approval" className="font-semibold text-tf-teal underline">
+                            Check approval status
+                          </Link>
+                        </>
+                      )}
+                    </p>
+                  </header>
+
+                  <div className="mt-6 rounded-2xl border border-black/10 bg-[#fbfdfc] p-5">
+                    <p className="m-0 text-[11px] font-bold tracking-[0.12em] text-tf-teal">
+                      REFERENCE NUMBER
+                    </p>
+                    <p className="m-0 mt-1 font-serif text-2xl tracking-wide text-tf-ink">
+                      {appt.reference || ref}
+                    </p>
+
+                    <dl className="m-0 mt-5 grid gap-3 border-t border-dashed border-[#d0e5dd] pt-4 text-sm">
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-[#666]">Service</dt>
+                        <dd className="m-0 text-right font-medium">{serviceName}</dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-[#666]">Psychologist</dt>
+                        <dd className="m-0 text-right font-medium">{psychName}</dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-[#666]">Date</dt>
+                        <dd className="m-0 text-right font-medium">{dateLong}</dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-[#666]">Time</dt>
+                        <dd className="m-0 text-right font-medium">{timeText}</dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-[#666]">Session format</dt>
+                        <dd className="m-0 text-right font-medium">
+                          {appt.session_format || "To be determined by psychologist"}
+                        </dd>
+                      </div>
+                      {appt.payment?.method && (
+                        <div className="flex justify-between gap-3">
+                          <dt className="text-[#666]">Payment method</dt>
+                          <dd className="m-0 text-right font-medium">{appt.payment.method}</dd>
+                        </div>
+                      )}
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-[#666]">Amount paid</dt>
+                        <dd className="m-0 text-right font-medium">{peso(paid)}</dd>
+                      </div>
+                      {remaining > 0 && (
+                        <div className="flex justify-between gap-3">
+                          <dt className="text-[#666]">Remaining balance</dt>
+                          <dd className="m-0 text-right font-medium text-amber-800">
+                            {peso(remaining)} (due after session)
+                          </dd>
+                        </div>
+                      )}
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-[#666]">Consent form</dt>
+                        <dd className="m-0 text-right font-medium">
+                          {!appt.consent_required
+                            ? "Not required"
+                            : appt.consent_complete
+                              ? "Completed"
+                              : "Pending"}
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+
+                  <p className="mt-5 text-sm leading-relaxed text-tf-body">
+                    Clinic location:{" "}
+                    <a
+                      href={`https://maps.google.com/?q=${encodeURIComponent(CLINIC.address)}`}
+                      className="font-medium text-tf-teal no-underline hover:underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {CLINIC.address}
+                    </a>
+                    . Please arrive 10 minutes early for in-person sessions once the format is
+                    confirmed.
+                  </p>
+
+                  <div className="mt-8 flex flex-wrap gap-3">
+                    <Link to="/" className={btnGhost}>
+                      Back to Home
+                    </Link>
+                    <Link to="/appointments" className={btnSolid}>
+                      View My Appointments
+                    </Link>
+                  </div>
+                </>
+              )}
             </Reveal>
 
             <Reveal delay={200}>
               <BookingSummary
                 step={5}
-                title={service?.fullName || "Booking"}
-                rows={[
-                  ...summaryRows.slice(0, 2),
-                  { label: "DATE & TIME", value: dateLabel },
-                ]}
-                fee={feeLabel}
-                status="Confirmed"
+                title={appt?.service?.full_name || appt?.service?.name || "Booking"}
+                rows={summaryRows}
+                fee={peso(total)}
+                status={appt ? (confirmed ? "Confirmed" : "Pending") : "Loading"}
               />
             </Reveal>
           </div>

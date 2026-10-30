@@ -1,36 +1,11 @@
-import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+﻿import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Navbar, Footer, Reveal, container, btnGhost, btnSolid } from "../components/Layout";
-import { PSYCHOLOGISTS } from "../data/clinic";
+import { Avatar } from "../components/ProfileMenu";
+import { apiFetch } from "../auth";
 import StepRail from "./StepRail";
 import BookingSummary from "./BookingSummary";
 import { useBooking } from "./bookingContext";
-
-const AVAILABLE_DAYS = [14, 15, 16, 19, 20, 22, 23, 26, 27, 29, 30];
-const MORNING_SLOTS = ["9:00 AM", "10:00 AM"];
-const AFTERNOON_SLOTS = ["1:00 PM", "2:00 PM", "4:00 PM"];
-/** Mock already-booked slots: key = `${day}|${time}` or `${day}|${time}|${psychologistId}` */
-const BOOKED_SLOTS = new Set([
-  "15|9:00 AM",
-  "15|9:00 AM|maria",
-  "20|2:00 PM",
-  "22|10:00 AM|juan",
-  "14|4:00 PM",
-]);
-const SLOT_DOCTORS = {
-  "9:00 AM": ["maria", "juan"],
-  "10:00 AM": ["maria"],
-  "1:00 PM": ["juan"],
-  "2:00 PM": ["maria", "juan"],
-  "4:00 PM": ["juan"],
-};
-
-function isSlotBooked(day, time, psychologistId) {
-  if (!day || !time) return false;
-  if (BOOKED_SLOTS.has(`${day}|${time}`)) return true;
-  if (psychologistId && BOOKED_SLOTS.has(`${day}|${time}|${psychologistId}`)) return true;
-  return false;
-}
 
 const pageShell = "font-sans text-black bg-tf-bg overflow-x-hidden antialiased";
 const mainPad = "py-12 pb-24 max-[720px]:py-7 max-[720px]:pb-16 bg-tf-bg";
@@ -38,6 +13,16 @@ const gridClass =
   "grid grid-cols-[minmax(0,1fr)_320px] gap-7 mt-8 items-start max-[900px]:grid-cols-1";
 const panelClass =
   "bg-white border border-black/[0.23] rounded-[21px] p-7 max-[720px]:p-5";
+
+const pad = (n) => String(n).padStart(2, "0");
+const ymd = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
+
+// "13:00" -> "1:00 PM"
+function to12(t) {
+  if (!t) return "";
+  const [h, m] = t.split(":").map(Number);
+  return `${h % 12 || 12}:${pad(m)} ${h >= 12 ? "PM" : "AM"}`;
+}
 
 function buildMonth(year, month) {
   const cells = [];
@@ -51,22 +36,32 @@ function buildMonth(year, month) {
   return weeks;
 }
 
-function SlotButton({ time, selected, unavailable, booked, onClick }) {
-  const disabled = unavailable || booked;
+const CLEAR_HOLD = {
+  date: null,
+  time: null,
+  timeStart: null,
+  timeEnd: null,
+  holdId: null,
+  holdExpiresAt: null,
+  providerId: null,
+};
+
+const MODES = [
+  ["psychologist-first", "Psychologist first"],
+  ["schedule-first", "Schedule first"],
+];
+
+function SlotButton({ time, selected, disabled, onClick }) {
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={onClick}
-      title={booked ? "Already booked" : undefined}
       className={[
         "h-[42px] rounded-lg border font-serif text-[0.9rem] grid place-items-center transition-[background,border-color,color] duration-150",
-        disabled && "cursor-not-allowed border-[#e5ebe8] bg-[#f5f7f6] text-[#aab4ae] line-through",
-        booked && !unavailable && "bg-[#eee] text-[#888] line-through decoration-[#888]",
-        !disabled &&
-          !selected &&
-          "cursor-pointer bg-white border-black/14 text-[#202020] hover:border-tf-teal",
-        selected && "bg-[#2c5743] border-[#2c5743] text-white no-underline",
+        disabled && !selected && "cursor-not-allowed opacity-60",
+        !selected && "cursor-pointer bg-white border-black/14 text-[#202020] hover:border-tf-teal",
+        selected && "bg-[#2c5743] border-[#2c5743] text-white",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -76,94 +71,459 @@ function SlotButton({ time, selected, unavailable, booked, onClick }) {
   );
 }
 
+function PsychCard({ p, selected, disabled, onClick }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={[
+        "w-full flex flex-col items-center text-center bg-[#fdfdfd] border border-black/[0.23] rounded-[21px] px-[18px] py-6 transition-[border-color,transform,box-shadow] duration-200",
+        disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(30,78,65,0.08)]",
+        selected && "border-[3px] border-tf-teal",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <Avatar user={p} size={96} />
+      <h3 className="m-0 mt-3 font-sans font-bold text-tf-teal text-[1.05rem]">{p.name}</h3>
+      <p className="m-0 mt-0.5 text-[#666] text-[0.85rem]">Psychologist</p>
+    </button>
+  );
+}
+
 export default function DateTime() {
   const navigate = useNavigate();
-  const {
-    booking,
-    update,
-    service,
-    psychologist,
-    summaryRows,
-    feeLabel,
-  } = useBooking();
+  const location = useLocation();
+  const { booking, update, service, feeLabel } = useBooking();
+
+  // Galing sa MyAppointments (Reschedule). Kapag wala, normal na booking.
+  const reschedule = location.state?.reschedule || null;
+  const isResched = !!reschedule;
+
+  const serviceId = isResched ? reschedule.serviceId : booking.serviceId;
+  const psychId = isResched ? reschedule.psychologistId : booking.psychologistId;
+  const isPsycho = serviceId === "psychotherapy";
+
+  const mode = isPsycho
+    ? isResched
+      ? "psychologist-first" // fixed: same psychologist, walang picker
+      : MODES.some(([id]) => id === booking.bookingMode)
+        ? booking.bookingMode
+        : "psychologist-first"
+    : null;
+  const pFirst = mode === "psychologist-first";
+  const sFirst = mode === "schedule-first";
+
+  const holdActive =
+    !!booking.holdId &&
+    !!booking.holdExpiresAt &&
+    new Date(booking.holdExpiresAt).getTime() > Date.now();
 
   const today = new Date();
-  const [year, setYear] = useState(booking.date?.year ?? today.getFullYear());
-  const [month, setMonth] = useState(booking.date?.month ?? today.getMonth());
-  const [day, setDay] = useState(booking.date?.day ?? null);
-  const [time, setTime] = useState(booking.time);
-  const isPsycho = booking.serviceId === "psychotherapy";
-  const mode = isPsycho ? booking.bookingMode : "schedule-first";
+  const [year, setYear] = useState(
+    !isResched ? booking.date?.year ?? today.getFullYear() : today.getFullYear()
+  );
+  const [month, setMonth] = useState(
+    !isResched ? booking.date?.month ?? today.getMonth() : today.getMonth()
+  );
+  // Sa reschedule, walang naka-pre-select na lumang hold
+  const [day, setDay] = useState(!isResched && holdActive ? booking.date?.day ?? null : null);
+  const [slot, setSlot] = useState(
+    !isResched && holdActive && booking.timeStart
+      ? { start: booking.timeStart, end: booking.timeEnd }
+      : null
+  );
+  // Psychotherapy: step 1 / step 2 (depende sa mode). Reschedule: diretso calendar.
+  const [step, setStep] = useState(
+    isResched ? (isPsycho ? 2 : 1) : isPsycho && holdActive && psychId ? 2 : 1
+  );
+
+  const [availableDays, setAvailableDays] = useState(new Set());
+  const [daysLoading, setDaysLoading] = useState(false);
+  const [slots, setSlots] = useState([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [psychList, setPsychList] = useState([]);
+  const [psychLoading, setPsychLoading] = useState(false);
+  const [holding, setHolding] = useState(false);
+  const [error, setError] = useState("");
+
+  // Alin ang ipapakita: listahan ng psychologists o calendar?
+  const showPsychPicker = isPsycho && ((pFirst && step === 1) || (sFirst && step === 2));
+  const showCalendar = !!serviceId && !showPsychPicker;
+  const calendarReady = showCalendar && (!isPsycho || sFirst || !!psychId);
 
   const weeks = useMemo(() => buildMonth(year, month), [year, month]);
-  const availableForDay = day != null && AVAILABLE_DAYS.includes(day);
-  const slotsForDay = availableForDay
-    ? [...MORNING_SLOTS, ...AFTERNOON_SLOTS]
-    : [];
+  const monthKey = `${year}-${pad(month + 1)}`;
 
-  const schedulePsychologists =
-    time && SLOT_DOCTORS[time]
-      ? PSYCHOLOGISTS.filter((p) => SLOT_DOCTORS[time].includes(p.id))
-      : [];
+  const handleErr = (err, fallback) => {
+    if (err.message?.includes("session expired")) {
+      navigate("/signin");
+      return;
+    }
+    setError(err.message || fallback);
+  };
 
-  const psychId = booking.psychologistId;
-  const selectedBooked = isSlotBooked(day, time, psychId);
-  const canContinue =
-    !!day &&
-    !!time &&
-    availableForDay &&
-    !selectedBooked &&
-    (!isPsycho || !!psychId);
+  // Schedule-first step 2 na walang napiling date/oras -> balik sa step 1
+  useEffect(() => {
+    if (sFirst && step === 2 && (!day || !slot)) setStep(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sFirst, step]);
 
-  const persistAndGo = () => {
+  const calendarParams = () => {
+    const q = new URLSearchParams({ service: serviceId });
+    if (isPsycho && pFirst) q.set("psychologist_id", psychId);
+    // ABA / Assessment reschedule: same provider pa rin
+    if (isResched && !isPsycho && reschedule.providerId) {
+      q.set("provider_id", reschedule.providerId);
+    }
+    return q;
+  };
+
+  // 1) Mga petsa na may bakante
+  useEffect(() => {
+    if (!calendarReady) return;
+    let alive = true;
+    setDaysLoading(true);
+    const q = calendarParams();
+    q.set("month", monthKey);
+    apiFetch(`/booking/availability?${q}`)
+      .then((d) => {
+        if (!alive) return;
+        setAvailableDays(new Set((d.days || []).map((s) => Number(s.slice(8, 10)))));
+      })
+      .catch((err) => alive && handleErr(err, "Could not load the calendar."))
+      .finally(() => alive && setDaysLoading(false));
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [calendarReady, serviceId, mode, psychId, monthKey]);
+
+  // 2) Mga oras sa napiling araw
+  useEffect(() => {
+    if (!calendarReady || !day) {
+      setSlots([]);
+      return;
+    }
+    let alive = true;
+    setSlotsLoading(true);
+    const q = calendarParams();
+    q.set("date", ymd(year, month, day));
+    apiFetch(`/booking/slots?${q}`)
+      .then((d) => alive && setSlots(d.slots || []))
+      .catch((err) => alive && handleErr(err, "Could not load time slots."))
+      .finally(() => alive && setSlotsLoading(false));
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [calendarReady, serviceId, mode, psychId, year, month, day]);
+
+  // 3) Listahan ng psychologists
+  useEffect(() => {
+    if (!showPsychPicker) return;
+    if (sFirst && (!day || !slot)) return;
+    let alive = true;
+    setPsychLoading(true);
+    const req = pFirst
+      ? apiFetch("/psychologists")
+      : apiFetch(
+        `/booking/psychologists?${new URLSearchParams({
+          date: ymd(year, month, day),
+          start_time: slot.start,
+        })}`
+      );
+    req
+      .then((d) => alive && setPsychList(d.psychologists || []))
+      .catch((err) => alive && handleErr(err, "Could not load psychologists."))
+      .finally(() => alive && setPsychLoading(false));
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showPsychPicker, mode]);
+
+  // ---------- hold helpers ----------
+  const dropServerHold = () => {
+    if (booking.holdId) {
+      apiFetch(`/booking/hold/${booking.holdId}`, { method: "DELETE" }).catch(() => { });
+    }
+  };
+
+  // Isang update() lang para hindi mag-overwrite ang state
+  const releaseHold = (extra = {}) => {
+    dropServerHold();
+    update({ ...CLEAR_HOLD, ...extra });
+  };
+
+  // Reschedule: linisin ang naiwang hold at i-set ang service/psychologist sa context
+  useEffect(() => {
+    if (!isResched) return;
+    dropServerHold();
     update({
-      date: { year, month, day },
-      time,
+      ...CLEAR_HOLD,
+      serviceId: reschedule.serviceId,
+      bookingMode: "psychologist-first",
+      psychologistId: reschedule.psychologistId ?? null,
+      psychologist: reschedule.psychologistId
+        ? { id: reschedule.psychologistId, name: reschedule.psychologist }
+        : null,
     });
-    navigate("/book/info");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const switchMode = (id) => {
+    if (id === mode) return;
+    dropServerHold();
+    update({ ...CLEAR_HOLD, bookingMode: id, psychologistId: null, psychologist: null });
+    setDay(null);
+    setSlot(null);
+    setStep(1);
+    setError("");
+    setAvailableDays(new Set());
+    setPsychList([]);
+  };
+
+  const changeMonth = (delta) => {
+    releaseHold();
+    setSlot(null);
+    setDay(null);
+    setError("");
+    const d = new Date(year, month + delta, 1);
+    setYear(d.getFullYear());
+    setMonth(d.getMonth());
   };
 
   const selectDay = (d) => {
+    if (d === day) return;
+    releaseHold();
+    setSlot(null);
+    setError("");
     setDay(d);
-    setTime(null);
-    if (mode === "schedule-first" && isPsycho) {
-      update({ psychologistId: null });
+  };
+
+  const saveHold = (h, psych) =>
+    update({
+      ...(psych ? { psychologistId: psych.id, psychologist: psych } : {}),
+      date: { year, month, day },
+      time: to12(h.start_time),
+      timeStart: h.start_time,
+      timeEnd: h.end_time,
+      holdId: h.id,
+      holdExpiresAt: h.expires_at,
+      providerId: h.provider_id,
+    });
+
+  // Pagpili ng oras
+  const selectTime = async (s) => {
+    if (holding) return;
+    setError("");
+
+    // Schedule-first: wala pang psychologist, kaya hindi pa nagho-hold dito.
+    // Magho-hold pagpili ng psychologist sa step 2.
+    if (sFirst) {
+      if (booking.holdId) releaseHold();
+      setSlot({ start: s.start_time, end: s.end_time });
+      return;
+    }
+
+    setHolding(true);
+    try {
+      const d = await apiFetch("/booking/hold", {
+        method: "POST",
+        body: JSON.stringify({
+          service: serviceId,
+          psychologist_id: isPsycho ? psychId : null,
+          // ABA / Assessment reschedule: same provider
+          ...(isResched && !isPsycho && reschedule.providerId
+            ? { provider_id: reschedule.providerId }
+            : {}),
+          date: ymd(year, month, day),
+          start_time: s.start_time,
+        }),
+      });
+      setSlot({ start: d.hold.start_time, end: d.hold.end_time });
+      saveHold(d.hold);
+    } catch (err) {
+      handleErr(err, "Could not hold that time.");
+      setSlot(null);
+      setSlots((prev) => prev.filter((p) => p.start_time !== s.start_time));
+    } finally {
+      setHolding(false);
     }
   };
 
-  const selectTime = (t) => {
-    setTime(t);
-    if (mode === "schedule-first" && isPsycho) {
-      update({ psychologistId: null });
+  // Psychologist-first, step 1
+  const pickPsychFirst = (p) => {
+    if (p.id === psychId) return;
+    releaseHold({ psychologistId: p.id, psychologist: p });
+    setDay(null);
+    setSlot(null);
+    setError("");
+  };
+
+  // Schedule-first, step 2: pumili ng psychologist para sa napiling oras (dito nagho-hold)
+  const pickPsychForSlot = async (p) => {
+    if (holding || !day || !slot) return;
+    setError("");
+    setHolding(true);
+    try {
+      const d = await apiFetch("/booking/hold", {
+        method: "POST",
+        body: JSON.stringify({
+          service: serviceId,
+          psychologist_id: p.id,
+          date: ymd(year, month, day),
+          start_time: slot.start,
+        }),
+      });
+      saveHold(d.hold, p);
+    } catch (err) {
+      handleErr(err, "Could not hold that time.");
+      setPsychList((prev) => prev.filter((x) => x.id !== p.id));
+    } finally {
+      setHolding(false);
     }
   };
+
+  // ---------- navigation ----------
+  let canContinue = false;
+  if (!serviceId) canContinue = false;
+  else if (!isPsycho) canContinue = !!day && !!slot && holdActive;
+  else if (isResched) canContinue = !!day && !!slot && holdActive;
+  else if (pFirst && step === 1) canContinue = !!psychId;
+  else if (pFirst && step === 2) canContinue = !!day && !!slot && holdActive;
+  else if (sFirst && step === 1) canContinue = !!day && !!slot;
+  else canContinue = holdActive && !!psychId;
+
+  // Reschedule: palitan lang ang date at oras ng existing appointment
+  const confirmReschedule = async () => {
+    setError("");
+    setHolding(true);
+    try {
+      const d = await apiFetch(`/my-appointments/${reschedule.id}/reschedule`, {
+        method: "POST",
+        body: JSON.stringify({ hold_id: booking.holdId }),
+      });
+      update({ ...CLEAR_HOLD });
+      navigate("/book/confirmation", {
+        state: { rescheduled: true, appointment: d.appointment },
+      });
+    } catch (err) {
+      handleErr(err, "Could not reschedule this appointment.");
+    } finally {
+      setHolding(false);
+    }
+  };
+
+  const goNext = () => {
+    if (!canContinue || holding) return;
+    setError("");
+    if (isResched) {
+      confirmReschedule();
+      return;
+    }
+    if (isPsycho && step === 1) {
+      setStep(2);
+      return;
+    }
+    navigate("/book/info");
+  };
+
+  const goBack = () => {
+    setError("");
+    if (isResched) {
+      releaseHold();
+      navigate("/my-appointments");
+      return;
+    }
+    if (isPsycho && step === 2) {
+      if (pFirst) {
+        releaseHold();
+        setDay(null);
+        setSlot(null);
+      } else {
+        releaseHold({ psychologistId: null, psychologist: null }); // keep day & oras
+      }
+      setStep(1);
+      return;
+    }
+    navigate("/book");
+  };
+
+  const morning = slots.filter((s) => Number(s.start_time.slice(0, 2)) < 12);
+  const afternoon = slots.filter((s) => Number(s.start_time.slice(0, 2)) >= 12);
+
+  const renderSlots = (list) => (
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-2.5 max-[720px]:grid-cols-2">
+      {list.map((s) => (
+        <SlotButton
+          key={s.start_time}
+          time={to12(s.start_time)}
+          selected={slot?.start === s.start_time}
+          disabled={holding}
+          onClick={() => selectTime(s)}
+        />
+      ))}
+    </div>
+  );
+
+  const dateLabel = day
+    ? new Date(year, month, day).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    : "";
+
+  const pickedPsych =
+    isResched && reschedule.psychologistId
+      ? { id: reschedule.psychologistId, name: reschedule.psychologist }
+      : booking.psychologist;
+
+  const heading = showPsychPicker
+    ? pFirst
+      ? "Choose your psychologist"
+      : "Psychologists available for this schedule"
+    : isResched
+      ? "Pick a new date & time"
+      : "Pick a date & time";
+
+  const summaryRows = [
+    { label: "SERVICE", value: service?.name || "—" },
+    {
+      label: "PSYCHOLOGIST",
+      value: isPsycho ? pickedPsych?.name || "To be set" : "Assigned by the clinic",
+    },
+    {
+      label: "DATE & TIME",
+      value:
+        day && slot ? `${dateLabel} · ${to12(slot.start)} - ${to12(slot.end)}` : "To be set",
+    },
+  ];
 
   return (
     <div className={pageShell}>
       <Navbar />
       <main className={mainPad}>
         <div className={container}>
-          <Reveal>
-            <StepRail current={1} />
-          </Reveal>
+          {!isResched && (
+            <Reveal>
+              <StepRail current={1} />
+            </Reveal>
+          )}
           <div className={gridClass}>
             <Reveal className={panelClass} delay={140}>
               <header className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <h2 className="m-0 mb-1.5 font-serif text-[1.4rem] font-normal text-[#202020]">
-                    Pick a date &amp; time
+                    {heading}
                   </h2>
                   <p className="m-0 text-sm text-[#666]">
                     {service?.name || "Service"}
-                    {psychologist ? ` · ${psychologist.name}` : ""}
+                    {isPsycho && pickedPsych ? ` · ${pickedPsych.name}` : ""}
                   </p>
                 </div>
-                {isPsycho && (
+                {isPsycho && !isResched && (
                   <div className="inline-flex rounded-[11px] bg-tf-teal/19 p-1 gap-1">
-                    {[
-                      ["psychologist-first", "Psychologist first"],
-                      ["schedule-first", "Schedule first"],
-                    ].map(([id, label]) => (
+                    {MODES.map(([id, label]) => (
                       <button
                         key={id}
                         type="button"
@@ -173,7 +533,7 @@ export default function DateTime() {
                             ? "bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] font-bold text-[#202020]"
                             : "bg-transparent text-[#202020]",
                         ].join(" ")}
-                        onClick={() => update({ bookingMode: id })}
+                        onClick={() => switchMode(id)}
                       >
                         {label}
                       </button>
@@ -182,272 +542,252 @@ export default function DateTime() {
                 )}
               </header>
 
-              {isPsycho && mode === "psychologist-first" && !booking.psychologistId && (
+              {!serviceId && (
                 <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                  Select a psychologist on the previous step to view their available schedules.
+                  Please select a service first.{" "}
+                  <Link to="/book" className="font-bold text-tf-teal underline">
+                    Go back to Step 1
+                  </Link>
                 </div>
               )}
 
-              {isPsycho && mode === "psychologist-first" && booking.psychologistId && (
-                <p className="m-0 mt-4 text-sm text-tf-body">
-                  Showing availability for <strong>{psychologist?.name}</strong>.
+              {isResched && (
+                <p className="m-0 mt-4 rounded-lg bg-[#e3f2ee] px-4 py-3 text-sm text-[#2f4a42]">
+                  You are rescheduling your appointment. Your current schedule stays until you
+                  confirm the new one. Your payment and details stay the same.
                 </p>
               )}
 
-              <div className="grid grid-cols-[380px_minmax(0,1fr)] gap-7 mt-5 items-start max-[900px]:grid-cols-1">
-                <div className="bg-white border border-[#e8eeeb] rounded-[14px] px-4 pt-3.5 pb-4">
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <button
-                      type="button"
-                      className="w-9 h-9 rounded-full border border-[#e8eeeb] bg-white text-[#1e4c40] text-[1.1rem] cursor-pointer grid place-items-center hover:bg-[#f3f8f6]"
-                      onClick={() => {
-                        if (month === 0) {
-                          setYear((y) => y - 1);
-                          setMonth(11);
-                        } else setMonth((m) => m - 1);
-                        setDay(null);
-                        setTime(null);
-                      }}
-                    >
-                      ‹
-                    </button>
-                    <p className="m-0 font-serif font-bold text-[#1e4c40] text-[1.1rem] text-center flex-1">
-                      {new Date(year, month).toLocaleDateString("en-US", {
-                        month: "long",
-                        year: "numeric",
-                      })}
+              {!isResched && isPsycho && pFirst && step === 2 && pickedPsych && (
+                <p className="m-0 mt-4 text-sm text-tf-body">
+                  Showing availability for <strong>{pickedPsych.name}</strong>.
+                </p>
+              )}
+              {isPsycho && sFirst && step === 1 && (
+                <p className="m-0 mt-4 text-sm text-tf-body">
+                  Showing all available schedules. Pick a date and time, then choose from the
+                  psychologists available for it.
+                </p>
+              )}
+              {isPsycho && sFirst && step === 2 && day && slot && (
+                <p className="m-0 mt-4 text-sm text-tf-body">
+                  Available on{" "}
+                  <strong>
+                    {dateLabel} · {to12(slot.start)} - {to12(slot.end)}
+                  </strong>
+                  .
+                </p>
+              )}
+
+              {error && (
+                <p
+                  role="alert"
+                  className="mt-4 mb-0 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+                >
+                  {error}
+                </p>
+              )}
+
+              {/* ---------- Psychologist picker ---------- */}
+              {showPsychPicker && (
+                <div className="mt-5">
+                  {psychLoading && <p className="m-0 text-sm text-[#666]">Loading psychologists…</p>}
+                  {!psychLoading && psychList.length === 0 && (
+                    <p className="m-0 text-sm text-[#666]">
+                      {pFirst
+                        ? "No psychologists available right now."
+                        : "No psychologists are available for this schedule. Go back and choose another time."}
                     </p>
-                    <button
-                      type="button"
-                      className="w-9 h-9 rounded-full border border-[#e8eeeb] bg-white text-[#1e4c40] text-[1.1rem] cursor-pointer grid place-items-center hover:bg-[#f3f8f6]"
-                      onClick={() => {
-                        if (month === 11) {
-                          setYear((y) => y + 1);
-                          setMonth(0);
-                        } else setMonth((m) => m + 1);
-                        setDay(null);
-                        setTime(null);
-                      }}
-                    >
-                      ›
-                    </button>
-                  </div>
-                  <div className="mb-2 grid grid-cols-7 gap-1.5 text-center text-[0.7rem] font-bold tracking-wide text-[#8a9690]">
-                    {["S", "M", "T", "W", "T", "F", "S"].map((d) => (
-                      <span key={d}>{d}</span>
+                  )}
+                  <ul className="list-none p-0 m-0 grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-[18px] max-[720px]:grid-cols-1">
+                    {psychList.map((p) => (
+                      <li key={p.id}>
+                        <PsychCard
+                          p={p}
+                          disabled={holding}
+                          selected={
+                            pFirst ? psychId === p.id : holdActive && psychId === p.id
+                          }
+                          onClick={() => (pFirst ? pickPsychFirst(p) : pickPsychForSlot(p))}
+                        />
+                      </li>
                     ))}
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    {weeks.map((week, wi) => (
-                      <div key={wi} className="grid grid-cols-7 gap-1.5">
-                        {week.map((d, di) => {
-                          if (!d) return <span key={di} className="aspect-square block" />;
-                          const isAvail = AVAILABLE_DAYS.includes(d);
-                          return (
-                            <button
-                              key={di}
-                              type="button"
-                              disabled={!isAvail}
-                              className={[
-                                "relative aspect-square rounded-[14px] border-0 font-sans font-medium text-[0.95rem] grid place-items-center transition-[background,color] duration-150",
-                                !isAvail && "bg-white text-[#adb8b2] cursor-not-allowed",
-                                isAvail &&
-                                  day !== d &&
-                                  "bg-[#f3f8f6] text-[#29353b] cursor-pointer hover:outline hover:outline-2 hover:outline-[#b6d2c4]",
-                                day === d && "bg-[#1e4c40] text-white",
-                              ]
-                                .filter(Boolean)
-                                .join(" ")}
-                              onClick={() => selectDay(d)}
-                            >
-                              {d}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-3 text-[0.7rem] text-[#666]">
-                    <span className="inline-flex items-center gap-1.5">
-                      <i className="size-2.5 rounded-sm bg-[#f3f8f6] border border-[#c5d8ce] not-italic" /> Available
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <i className="size-2.5 rounded-sm bg-white border border-[#e5ebe8] not-italic" /> Unavailable
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <i className="size-2.5 rounded-sm bg-[#eee] not-italic" /> Booked
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <i className="size-2.5 rounded-sm bg-[#1e4c40] not-italic" /> Selected
-                    </span>
-                  </div>
+                  </ul>
+                  {sFirst && holdActive && (
+                    <p className="mt-4 mb-0 text-xs text-[#666]">
+                      This time is held for you while you complete your booking.
+                    </p>
+                  )}
                 </div>
+              )}
 
-                <div className="min-w-0">
-                  {!day && (
-                    <div className="rounded-xl border border-dashed border-[#b6d2c4] bg-[#f9fcfb] px-5 py-10 text-center">
-                      <p className="m-0 font-serif text-base text-[#3d5c52]">Select a date</p>
-                      <p className="m-0 mt-1 text-sm text-[#666]">
-                        Available days are highlighted on the calendar.
-                      </p>
-                    </div>
-                  )}
-
-                  {day && !availableForDay && (
-                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-8 text-center text-sm text-amber-900">
-                      No schedule is available on this date. Please choose another day.
-                    </div>
-                  )}
-
-                  {day && availableForDay && (
-                    <>
-                      <p className="m-0 mb-1 font-serif text-[1.15rem] text-[#202020]">
-                        {new Date(year, month, day).toLocaleDateString("en-US", {
+              {/* ---------- Calendar + oras ---------- */}
+              {showCalendar && (
+                <div className="grid grid-cols-[380px_minmax(0,1fr)] gap-7 mt-5 items-start max-[900px]:grid-cols-1">
+                  <div className="bg-white border border-[#e8eeeb] rounded-[14px] px-4 pt-3.5 pb-4">
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <button
+                        type="button"
+                        className="w-9 h-9 rounded-full border border-[#e8eeeb] bg-white text-[#1e4c40] text-[1.1rem] cursor-pointer grid place-items-center hover:bg-[#f3f8f6]"
+                        onClick={() => changeMonth(-1)}
+                      >
+                        ‹
+                      </button>
+                      <p className="m-0 font-serif font-bold text-[#1e4c40] text-[1.1rem] text-center flex-1">
+                        {new Date(year, month).toLocaleDateString("en-US", {
                           month: "long",
-                          day: "numeric",
                           year: "numeric",
                         })}
                       </p>
-                      {slotsForDay.length === 0 ? (
-                        <p className="mt-4 text-sm text-[#666]">No time slots available.</p>
-                      ) : (
-                        <>
-                          <div className="mt-4">
-                            <p className="m-0 mb-2 font-serif font-bold text-[#666] text-[0.72rem] tracking-[0.1em]">
-                              MORNING
-                            </p>
-                            <div className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-2.5 max-[720px]:grid-cols-2">
-                              {MORNING_SLOTS.map((t) => {
-                                const booked = isSlotBooked(day, t, mode === "psychologist-first" ? psychId : null);
-                                return (
-                                  <SlotButton
-                                    key={t}
-                                    time={t}
-                                    selected={time === t}
-                                    booked={booked}
-                                    onClick={() => selectTime(t)}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </div>
-                          <div className="mt-4">
-                            <p className="m-0 mb-2 font-serif font-bold text-[#666] text-[0.72rem] tracking-[0.1em]">
-                              AFTERNOON
-                            </p>
-                            <div className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-2.5 max-[720px]:grid-cols-2">
-                              {AFTERNOON_SLOTS.map((t) => {
-                                const booked = isSlotBooked(day, t, mode === "psychologist-first" ? psychId : null);
-                                return (
-                                  <SlotButton
-                                    key={t}
-                                    time={t}
-                                    selected={time === t}
-                                    booked={booked}
-                                    onClick={() => selectTime(t)}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </div>
-                          {selectedBooked && (
-                            <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                              That time is already booked. Please choose another available slot.
-                            </p>
-                          )}
-                          {!MORNING_SLOTS.concat(AFTERNOON_SLOTS).some(
-                            (t) => !isSlotBooked(day, t, mode === "psychologist-first" ? psychId : null)
-                          ) && (
-                            <p className="mt-3 text-sm text-[#666]">
-                              No open slots left on this date. Try another available day.
-                            </p>
-                          )}
-                        </>
-                      )}
-
-                      {isPsycho && mode === "schedule-first" && time && (
-                        <div className="mt-6">
-                          <h3 className="m-0 mb-3 font-serif text-base text-[#202020]">
-                            Psychologists available for this schedule
-                          </h3>
-                          {schedulePsychologists.length === 0 ? (
-                            <p className="m-0 text-sm text-[#666]">
-                              No psychologists are available for this slot.
-                            </p>
-                          ) : (
-                            <ul className="m-0 list-none p-0 grid gap-2.5">
-                              {schedulePsychologists.map((p) => {
-                                const taken = isSlotBooked(day, time, p.id);
-                                return (
-                                  <li key={p.id}>
-                                    <button
-                                      type="button"
-                                      disabled={taken}
-                                      onClick={() => update({ psychologistId: p.id })}
-                                      className={[
-                                        "w-full flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-[border-color,background] duration-150",
-                                        taken && "cursor-not-allowed opacity-55 bg-[#f5f7f6]",
-                                        !taken && booking.psychologistId === p.id
-                                          ? "border-tf-teal bg-tf-soft cursor-pointer"
-                                          : "",
-                                        !taken && booking.psychologistId !== p.id
-                                          ? "border-black/12 bg-white hover:border-tf-teal cursor-pointer"
-                                          : "",
-                                      ].join(" ")}
-                                    >
-                                      <span>
-                                        <strong className="block text-sm text-tf-ink">{p.name}</strong>
-                                        <small className="text-[#666]">
-                                          {taken ? "Unavailable for this slot" : p.role}
-                                        </small>
-                                      </span>
-                                      {booking.psychologistId === p.id && !taken && (
-                                        <span className="text-xs font-bold text-tf-teal">Selected</span>
-                                      )}
-                                    </button>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          )}
+                      <button
+                        type="button"
+                        className="w-9 h-9 rounded-full border border-[#e8eeeb] bg-white text-[#1e4c40] text-[1.1rem] cursor-pointer grid place-items-center hover:bg-[#f3f8f6]"
+                        onClick={() => changeMonth(1)}
+                      >
+                        ›
+                      </button>
+                    </div>
+                    <div className="mb-2 grid grid-cols-7 gap-1.5 text-center text-[0.7rem] font-bold tracking-wide text-[#8a9690]">
+                      {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+                        <span key={i}>{d}</span>
+                      ))}
+                    </div>
+                    <div className={`flex flex-col gap-1.5 ${daysLoading ? "opacity-60" : ""}`}>
+                      {weeks.map((week, wi) => (
+                        <div key={wi} className="grid grid-cols-7 gap-1.5">
+                          {week.map((d, di) => {
+                            if (!d) return <span key={di} className="aspect-square block" />;
+                            const isAvail = calendarReady && availableDays.has(d);
+                            return (
+                              <button
+                                key={di}
+                                type="button"
+                                disabled={!isAvail}
+                                className={[
+                                  "relative aspect-square rounded-[14px] border-0 font-sans font-medium text-[0.95rem] grid place-items-center transition-[background,color] duration-150",
+                                  !isAvail && "bg-white text-[#adb8b2] cursor-not-allowed",
+                                  isAvail &&
+                                  day !== d &&
+                                  "bg-[#f3f8f6] text-[#29353b] cursor-pointer hover:outline hover:outline-2 hover:outline-[#b6d2c4]",
+                                  day === d && "bg-[#1e4c40] text-white",
+                                ]
+                                  .filter(Boolean)
+                                  .join(" ")}
+                                onClick={() => selectDay(d)}
+                              >
+                                {d}
+                              </button>
+                            );
+                          })}
                         </div>
-                      )}
-                    </>
-                  )}
+                      ))}
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-3 text-[0.7rem] text-[#666]">
+                      <span className="inline-flex items-center gap-1.5">
+                        <i className="size-2.5 rounded-sm bg-[#f3f8f6] border border-[#c5d8ce] not-italic" />{" "}
+                        Available
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <i className="size-2.5 rounded-sm bg-white border border-[#e5ebe8] not-italic" />{" "}
+                        Unavailable
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <i className="size-2.5 rounded-sm bg-[#1e4c40] not-italic" /> Selected
+                      </span>
+                    </div>
+                    {calendarReady && !daysLoading && availableDays.size === 0 && (
+                      <p className="mt-3 mb-0 text-xs text-[#666]">
+                        No available dates this month. Try the next month.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="min-w-0">
+                    {!day && (
+                      <div className="rounded-xl border border-dashed border-[#b6d2c4] bg-[#f9fcfb] px-5 py-10 text-center">
+                        <p className="m-0 font-serif text-base text-[#3d5c52]">Select a date</p>
+                        <p className="m-0 mt-1 text-sm text-[#666]">
+                          Available days are highlighted on the calendar.
+                        </p>
+                      </div>
+                    )}
+
+                    {day && (
+                      <>
+                        <p className="m-0 mb-1 font-serif text-[1.15rem] text-[#202020]">
+                          {new Date(year, month, day).toLocaleDateString("en-US", {
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </p>
+
+                        {slotsLoading ? (
+                          <p className="mt-4 text-sm text-[#666]">Loading time slots…</p>
+                        ) : slots.length === 0 ? (
+                          <p className="mt-4 text-sm text-[#666]">
+                            No open time slots left on this date. Please choose another day.
+                          </p>
+                        ) : (
+                          <>
+                            {morning.length > 0 && (
+                              <div className="mt-4">
+                                <p className="m-0 mb-2 font-serif font-bold text-[#666] text-[0.72rem] tracking-[0.1em]">
+                                  MORNING
+                                </p>
+                                {renderSlots(morning)}
+                              </div>
+                            )}
+                            {afternoon.length > 0 && (
+                              <div className="mt-4">
+                                <p className="m-0 mb-2 font-serif font-bold text-[#666] text-[0.72rem] tracking-[0.1em]">
+                                  AFTERNOON
+                                </p>
+                                {renderSlots(afternoon)}
+                              </div>
+                            )}
+                            {slot && !sFirst && (
+                              <p className="mt-4 mb-0 text-xs text-[#666]">
+                                This time is held for you while you complete your booking.
+                              </p>
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="flex items-center justify-between gap-4 flex-wrap mt-8 pt-5 border-t border-dashed border-[#d0e5dd]">
-                <Link to="/book" className={btnGhost}>
-                  Back
-                </Link>
+                {isResched || (isPsycho && step === 2) ? (
+                  <button type="button" className={btnGhost} onClick={goBack}>
+                    Back
+                  </button>
+                ) : (
+                  <Link to="/book" className={btnGhost}>
+                    Back
+                  </Link>
+                )}
                 <button
                   type="button"
                   className={`${btnSolid} disabled:opacity-55 disabled:cursor-not-allowed`}
-                  disabled={!canContinue}
-                  onClick={persistAndGo}
+                  disabled={!canContinue || holding}
+                  onClick={goNext}
                 >
-                  Continue
+                  {isResched ? (holding ? "Please wait…" : "Confirm reschedule") : "Continue"}
                 </button>
               </div>
             </Reveal>
+
             <Reveal delay={200}>
               <BookingSummary
                 step={2}
                 title={service?.fullName || "Booking"}
-                rows={[
-                  ...summaryRows.slice(0, 2),
-                  {
-                    label: "DATE & TIME",
-                    value:
-                      day && time
-                        ? `${new Date(year, month, day).toLocaleDateString("en-US", { month: "short", day: "numeric" })} · ${time}`
-                        : "To be set",
-                  },
-                ]}
-                fee={feeLabel}
-                ctaDisabled={!canContinue}
-                onContinue={persistAndGo}
+                rows={summaryRows}
+                fee={isResched ? "No additional charge" : feeLabel}
+                ctaDisabled={!canContinue || holding}
+                onContinue={goNext}
               />
             </Reveal>
           </div>
