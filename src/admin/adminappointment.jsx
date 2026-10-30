@@ -147,7 +147,13 @@ const ConsentChip = ({ status }) => {
         </span>
     );
 };
-
+const StatusChip = ({ s, className = "" }) => (
+    <span
+        className={`${serif} h-[24px] items-center justify-center rounded-full px-[12px] text-[11px] font-bold ${s.cls} ${className}`}
+    >
+        {s.chip}
+    </span>
+);
 const AppointmentCard = ({ a, open, onToggle, busy, onApprove, onDecline, onComplete, onVerify, onViewConsent }) => {
     const s = STATUS[a.state] || STATUS.pending;
     const d = new Date(a.date + "T00:00");
@@ -297,6 +303,7 @@ const DayHeading = ({ children }) => (
 /* ------------------------------------------------------------------ */
 export default function AdminAppointment() {
     const navigate = useNavigate();
+    const [navOpen, setNavOpen] = useState(false);
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");

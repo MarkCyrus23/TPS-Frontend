@@ -70,7 +70,25 @@ const statusBadge = {
 };
 
 /* ---------- Page ---------- */
+const DateChip = ({ className = "" }) => {
+  const label = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+  return (
+    <div
+      className={`h-[30px] min-w-[170px] items-center justify-center gap-[8px] rounded-[6px] border border-[#4a9b8e] bg-[#e3f2ee] px-3 ${className}`}
+    >
+      <Calendar className="h-[14px] w-[14px] text-[#2a8570]" />
+      <span className={`${inter} text-[12px] font-bold text-[#2a8570]`}>{label}</span>
+    </div>
+  );
+};
+
+/* ---------- Page ---------- */
 export default function AffiliatePayment() {
+  const [navOpen, setNavOpen] = useState(false);
   const [payments, setPayments] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -128,17 +146,28 @@ export default function AffiliatePayment() {
     load();
   };
 
-  const todayLabel = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-
   return (
     <div className="flex min-h-screen w-full bg-[#f2f2f2] antialiased">
       <style>{FONT_CSS}</style>
 
-      <AffiliateNavigation />
+      {/* Sidebar: laging nakikita sa lg pataas */}
+      <div className="hidden lg:block">
+        <AffiliateNavigation />
+      </div>
+
+      {/* Sidebar: drawer sa mobile/tablet */}
+      {navOpen && (
+        <div className="fixed inset-0 z-50 flex lg:hidden">
+          <div className="h-full overflow-y-auto bg-white">
+            <AffiliateNavigation />
+          </div>
+          <button
+            aria-label="Close menu"
+            onClick={() => setNavOpen(false)}
+            className="flex-1 bg-black/40"
+          />
+        </div>
+      )}
 
       <main className="min-w-0 flex-1 px-[16px] pb-[48px] pt-[20px] sm:px-[28px] sm:pt-[32px] lg:px-[41px] lg:pb-[60px] lg:pt-[51px]">
         {/* Header */}
@@ -167,10 +196,7 @@ export default function AffiliatePayment() {
           </div>
 
           <div className="flex items-center gap-[17px]">
-            <div className="flex h-[30px] min-w-[170px] items-center justify-center gap-[8px] rounded-[6px] border border-[#4a9b8e] bg-[#e3f2ee] px-3">
-              <Calendar className="h-[14px] w-[14px] text-[#2a8570]" />
-              <span className={`${inter} text-[12px] font-bold text-[#2a8570]`}>{todayLabel}</span>
-            </div>
+            <DateChip className="hidden sm:flex" />
             <button
               aria-label="Notifications"
               className="relative flex h-[37px] w-[46px] items-center justify-center rounded-[8px] border border-[#c7b6b6] bg-white"

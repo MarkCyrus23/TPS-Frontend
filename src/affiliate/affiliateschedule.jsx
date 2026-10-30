@@ -75,10 +75,23 @@ const hoursBetween = (a, b) => {
   return (bh * 60 + bm - (ah * 60 + am)) / 60;
 };
 
+const DateChip = ({ label, className = "" }) => (
+  <div
+    className={`h-[30px] min-w-[170px] items-center justify-center gap-[8px] rounded-[6px] border border-[#4a9b8e] bg-[#e3f2ee] px-[12px] ${className}`}
+  >
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2a8570" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" />
+    </svg>
+    <span className={`${inter} text-[12px] font-bold text-[#2a8570]`}>{label}</span>
+  </div>
+);
+
 /* ------------------------------------------------------------------ */
 /*  Main Schedule Component                                            */
 /* ------------------------------------------------------------------ */
 export default function AffiliateSchedule() {
+  const [navOpen, setNavOpen] = useState(false);
   const today = new Date();
   const todayISO = toISO(today.getFullYear(), today.getMonth(), today.getDate());
 
@@ -236,28 +249,49 @@ export default function AffiliateSchedule() {
       <style>{FONT_CSS}</style>
 
       <div className="flex w-full items-start">
-        <AdminNavigation />
+        {/* Sidebar: laging nakikita sa lg pataas */}
+        <div className="hidden lg:block">
+          <AdminNavigation />
+        </div>
+
+        {/* Sidebar: drawer sa mobile/tablet */}
+        {navOpen && (
+          <div className="fixed inset-0 z-50 flex lg:hidden">
+            <div className="h-full overflow-y-auto bg-white">
+              <AdminNavigation />
+            </div>
+            <button
+              aria-label="Close menu"
+              onClick={() => setNavOpen(false)}
+              className="flex-1 bg-black/40"
+            />
+          </div>
+        )}
 
         <main className="flex-1 px-[40px] pt-[32px] pb-[60px] max-w-[1400px]">
           <header className="flex items-start justify-between">
             <div>
+              <button
+                type="button"
+                onClick={() => setNavOpen(true)}
+                aria-label="Open menu"
+                className="mb-[12px] flex h-[37px] w-[46px] items-center justify-center rounded-[8px] border border-[#c7b6b6] bg-white lg:hidden"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2a8570" strokeWidth="2" strokeLinecap="round">
+                  <path d="M3 6h18M3 12h18M3 18h18" />
+                </svg>
+              </button>
               <div className={`${inter} text-[20px] font-bold tracking-[4.2px] text-[#4a9b8e] uppercase`}>SCHEDULE</div>
               <h1 className={`${serif} text-[40px] font-bold leading-[1.15] text-[#2f4a42] mt-[8px]`}>When are you available?</h1>
               <p className={`${serif} text-[15px] text-[#555] mt-[8px] max-w-[620px]`}>
                 Set the days and hours clients can book with you. Clients only see the times you open here.
               </p>
               {/* Date chip: nasa ilalim ng description sa mobile */}
-              <DateChip className="mt-[12px] inline-flex sm:hidden" />
+              <DateChip label={headerDate} className="mt-[12px] inline-flex sm:hidden" />
             </div>
 
             <div className="flex items-center gap-[17px] pt-[6px]">
-              <div className="flex h-[30px] min-w-[170px] px-[12px] items-center justify-center gap-[8px] rounded-[6px] border border-[#4a9b8e] bg-[#e3f2ee]">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2a8570" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" />
-                  <path d="M16 2v4M8 2v4M3 10h18" />
-                </svg>
-                <span className={`${inter} text-[12px] font-bold text-[#2a8570]`}>{headerDate}</span>
-              </div>
+              <DateChip label={headerDate} className="hidden sm:flex" />
 
               <button
                 aria-label="Notifications"

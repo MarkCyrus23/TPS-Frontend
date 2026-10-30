@@ -38,7 +38,7 @@ const FILTERS = [
 /* ------------------------------------------------------------------ */
 /*  Building blocks                                                    */
 /* ------------------------------------------------------------------ */
-const Header = () => {
+const Header = ({ onMenu }) => {
     const todayLabel = new Date().toLocaleDateString("en-US", {
         weekday: "long",
         month: "long",
@@ -47,6 +47,16 @@ const Header = () => {
     return (
         <header className="flex items-start justify-between">
             <div>
+                <button
+                    type="button"
+                    onClick={onMenu}
+                    aria-label="Open menu"
+                    className="mb-[12px] flex h-[37px] w-[46px] items-center justify-center rounded-[8px] border border-[#c7b6b6] bg-white lg:hidden"
+                >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2a8570" strokeWidth="2" strokeLinecap="round">
+                        <path d="M3 6h18M3 12h18M3 18h18" />
+                    </svg>
+                </button>
                 <div className={`${inter} text-[20px] font-bold tracking-[4.2px] text-[#4a9b8e]`}>APPOINTMENT</div>
                 <h1 className={`${serif} mt-[8px] text-[40px] font-bold leading-[1.15] text-[#2f4a42]`}>
                     Everyone who booked with you.
@@ -147,6 +157,14 @@ const ConsentChip = ({ status }) => {
         </span>
     );
 };
+
+const StatusChip = ({ s, className = "" }) => (
+    <span
+        className={`${serif} h-[24px] items-center justify-center rounded-full px-[12px] text-[11px] font-bold ${s.cls} ${className}`}
+    >
+        {s.chip}
+    </span>
+);
 
 const AppointmentCard = ({ a, open, onToggle, busy, onApprove, onDecline, onComplete, onVerify, onViewConsent }) => {
     const s = STATUS[a.state] || STATUS.pending;
@@ -297,6 +315,7 @@ const DayHeading = ({ children }) => (
 /* ------------------------------------------------------------------ */
 export default function AffiliateAppointment() {
     const navigate = useNavigate();
+    const [navOpen, setNavOpen] = useState(false);
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -381,7 +400,24 @@ export default function AffiliateAppointment() {
         <div className="flex min-h-screen w-full bg-[#f2f2f2] antialiased">
             <style>{FONT_CSS}</style>
 
-            <AffiliateNavigation />
+            {/* Sidebar: laging nakikita sa lg pataas */}
+            <div className="hidden lg:block">
+                <AffiliateNavigation />
+            </div>
+
+            {/* Sidebar: drawer sa mobile/tablet */}
+            {navOpen && (
+                <div className="fixed inset-0 z-50 flex lg:hidden">
+                    <div className="h-full overflow-y-auto bg-white">
+                        <AffiliateNavigation />
+                    </div>
+                    <button
+                        aria-label="Close menu"
+                        onClick={() => setNavOpen(false)}
+                        className="flex-1 bg-black/40"
+                    />
+                </div>
+            )}
 
             <main className="min-w-0 flex-1 px-[16px] pb-[48px] pt-[20px] sm:px-[28px] sm:pt-[32px] lg:px-[36px] lg:pb-[60px] lg:pt-[51px]">
                 <Header onMenu={() => setNavOpen(true)} />
