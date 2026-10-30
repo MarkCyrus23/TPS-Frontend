@@ -95,7 +95,7 @@ export default function ReviewAndPay() {
     holdActive &&
     price > 0 &&
     !!method &&
-    walletNumber.length >= 6 &&
+    walletNumber.length === 11 &&
     /^[A-Za-z0-9-]{6,60}$/.test(refNum) &&
     !!receipt;
 
@@ -372,11 +372,11 @@ export default function ReviewAndPay() {
                       <input
                         type="tel"
                         inputMode="numeric"
-                        maxLength={20}
+                        maxLength={11}
                         className={inputClass}
                         value={walletNumber}
-                        onChange={(e) => setWalletNumber(e.target.value.replace(/\D/g, "").slice(0, 20))}
-                        placeholder="09123456789"
+                        onChange={(e) => setWalletNumber(e.target.value.replace(/\D/g, "").slice(0, 11))}
+                        placeholder={`${method.name} Number`}
                       />
                     </label>
                     <label className="block text-sm font-serif font-bold">

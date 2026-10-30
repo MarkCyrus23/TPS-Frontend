@@ -32,7 +32,6 @@ const FILTERS = [
     ["pending", "Pending approval"],
     ["approved", "Approved"],
     ["completed", "Completed"],
-    ["declined", "Declined"],
 ];
 
 /* ------------------------------------------------------------------ */
@@ -154,7 +153,7 @@ const StatusChip = ({ s, className = "" }) => (
         {s.chip}
     </span>
 );
-const AppointmentCard = ({ a, open, onToggle, busy, onApprove, onDecline, onComplete, onVerify, onViewConsent }) => {
+const AppointmentCard = ({ a, open, onToggle, busy, onApprove, onComplete, onVerify, onViewConsent }) => {
     const s = STATUS[a.state] || STATUS.pending;
     const d = new Date(a.date + "T00:00");
 
@@ -201,16 +200,7 @@ const AppointmentCard = ({ a, open, onToggle, busy, onApprove, onDecline, onComp
                 </button>
 
                 <div className="flex items-center gap-[8px]">
-                    {a.state === "pending" && (
-                        <button
-                            type="button"
-                            disabled={busy}
-                            onClick={onDecline}
-                            className={`${serif} h-[26px] cursor-pointer rounded-[5px] border border-[#ff4c4c75] bg-white px-[14px] text-[11px] text-[#ff5656] hover:bg-[#fff1f1] disabled:cursor-not-allowed disabled:opacity-60`}
-                        >
-                            Decline
-                        </button>
-                    )}
+
                     {a.consent_status === "submitted" && (
                         <button
                             type="button"
@@ -235,9 +225,7 @@ const AppointmentCard = ({ a, open, onToggle, busy, onApprove, onDecline, onComp
                 </div>
             </div>
 
-            {a.state === "declined" && a.decline_reason && (
-                <p className={`${serif} mb-0 mt-[10px] text-[12px] text-red-700`}>Reason: {a.decline_reason}</p>
-            )}
+
 
             {open && (
                 <div className="mt-[14px] grid grid-cols-1 gap-[16px] rounded-[6px] border border-[#c9d9d4] bg-[#e8f1ee] px-[16px] py-[16px] sm:grid-cols-3 sm:gap-[24px] sm:px-[24px] sm:py-[18px]">
@@ -336,11 +324,7 @@ export default function AdminAppointment() {
         }
     };
 
-    const onDecline = (a) => {
-        const reason = window.prompt(`Decline ${a.client_name}'s appointment? Add a reason (optional):`);
-        if (reason === null) return;
-        act(a.id, "decline", { reason: reason.trim() || null });
-    };
+
 
     const toggle = (id) =>
         setOpenIds((prev) => {
@@ -411,7 +395,7 @@ export default function AdminAppointment() {
                 <Header onMenu={() => setNavOpen(true)} />
 
                 {/* Status filters */}
-                <div className="mt-[28px] grid grid-cols-2 gap-[12px] sm:mt-[40px] sm:grid-cols-3 xl:mt-[56px] xl:grid-cols-6 xl:gap-[27px]">
+                <div className="mt-[28px] grid grid-cols-2 gap-[12px] sm:mt-[40px] sm:grid-cols-3 xl:mt-[56px] xl:grid-cols-5 xl:gap-[27px]">
                     {FILTERS.map(([key, label]) => {
                         const active = filter === key;
                         return (
@@ -467,7 +451,6 @@ export default function AdminAppointment() {
                                         onToggle={() => toggle(a.id)}
                                         busy={busyId === a.id}
                                         onApprove={() => act(a.id, "approve")}
-                                        onDecline={() => onDecline(a)}
                                         onComplete={() => act(a.id, "complete")}
                                         onVerify={() => navigate(PAYMENT_PATH)}
                                         onViewConsent={() => setViewing(a)}
